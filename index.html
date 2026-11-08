@@ -10,6 +10,8 @@
     <style>
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+        /* Prevent text selection and improve touch response on mobile */
+        button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body class="bg-gray-950 text-white h-screen flex flex-col overflow-hidden text-xs font-sans">
@@ -17,7 +19,7 @@
     <!-- Top Header -->
     <header class="bg-gray-900 border-b border-gray-800 px-3 py-2 flex justify-between items-center shrink-0">
         <div class="flex items-center gap-2">
-            <button class="text-gray-300 text-base">☰</button>
+            <button class="text-gray-300 text-base p-1">☰</button>
             <div class="bg-white text-gray-950 font-black px-2 py-0.5 rounded text-sm tracking-wider flex items-center gap-0.5 shadow">
                 <span class="text-red-600">R</span>J
             </div>
@@ -150,16 +152,16 @@
 
                 <!-- Payment Method Buttons -->
                 <div class="grid grid-cols-3 gap-1 pt-1">
-                    <button onclick="setPaymentMode('Cash')" id="pay-Cash" class="bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs">💵 Cash</button>
-                    <button onclick="setPaymentMode('Card')" id="pay-Card" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">💳 Card</button>
-                    <button onclick="setPaymentMode('Due')" id="pay-Due" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">👤 Due</button>
+                    <button type="button" onclick="setPaymentMode('Cash')" id="pay-Cash" class="bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs">💵 Cash</button>
+                    <button type="button" onclick="setPaymentMode('Card')" id="pay-Card" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">💳 Card</button>
+                    <button type="button" onclick="setPaymentMode('Due')" id="pay-Due" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">👤 Due</button>
                 </div>
 
                 <!-- Bottom Action Buttons -->
                 <div class="grid grid-cols-3 gap-1 pt-1">
-                    <button onclick="saveOrder()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded font-bold shadow text-sm">SAVE</button>
-                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold shadow text-sm">PRINT</button>
-                    <button onclick="clearOrder()" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded font-bold shadow text-sm">KOT</button>
+                    <button type="button" onclick="saveOrder()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded font-bold shadow text-sm">SAVE</button>
+                    <button type="button" onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold shadow text-sm">PRINT</button>
+                    <button type="button" onclick="clearOrder()" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded font-bold shadow text-sm">KOT</button>
                 </div>
             </div>
         </div>
@@ -167,10 +169,10 @@
 
     <!-- Bottom Navigation Bar -->
     <footer class="bg-gray-900 border-t border-gray-800 grid grid-cols-4 text-center py-1.5 shrink-0 text-[10px] font-medium">
-        <button class="text-red-500 flex flex-col items-center gap-0.5"><span>🛒</span> New Order</button>
-        <button class="text-gray-400 flex flex-col items-center gap-0.5"><span>🪑</span> Running Tables</button>
-        <button class="text-gray-400 flex flex-col items-center gap-0.5"><span>📊</span> Reports</button>
-        <button class="text-gray-400 flex flex-col items-center gap-0.5"><span>⚙️</span> Settings</button>
+        <button class="text-red-500 flex flex-col items-center gap-0.5 p-1"><span>🛒</span> New Order</button>
+        <button class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>🪑</span> Running Tables</button>
+        <button class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>📊</span> Reports</button>
+        <button class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>⚙️</span> Settings</button>
     </footer>
 
     <script>
@@ -219,7 +221,7 @@
                         <p class="font-semibold text-white">${i.name}</p>
                         <p class="text-amber-400 font-bold">₹${i.price}</p>
                     </div>
-                    <button onclick="addItem('${i.name}', ${i.price})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold text-xs">ADD</button>
+                    <button type="button" onclick="addItem('${i.name}', ${i.price})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold text-xs">ADD</button>
                 </div>
             `).join('');
         }
@@ -283,14 +285,14 @@
                 return `
                     <div class="flex justify-between items-center bg-gray-800 p-1.5 rounded text-xs">
                         <div class="flex items-center gap-1">
-                            <button onclick="removeItem(${idx})" class="text-red-400 font-bold px-1.5">✕</button>
+                            <button type="button" onclick="removeItem(${idx})" class="text-red-400 font-bold px-1.5">✕</button>
                             <span class="text-gray-200 truncate w-24">${item.name}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="flex items-center bg-gray-700 rounded px-1">
-                                <button onclick="changeQty(${idx}, -1)" class="text-red-300 font-bold px-1.5">-</button>
+                                <button type="button" onclick="changeQty(${idx}, -1)" class="text-red-300 font-bold px-1.5">-</button>
                                 <span class="font-bold px-1.5">${item.qty}</span>
-                                <button onclick="changeQty(${idx}, 1)" class="text-emerald-300 font-bold px-1.5">+</button>
+                                <button type="button" onclick="changeQty(${idx}, 1)" class="text-emerald-300 font-bold px-1.5">+</button>
                             </div>
                             <span class="w-8 text-right text-gray-300">₹${item.price}</span>
                             <span class="w-10 text-right text-amber-400 font-bold">₹${total}</span>
@@ -311,7 +313,7 @@
         }
 
         function saveOrder() {
-            if(currentOrder.length === 0) { alert('ऑर्डर खाली है!'); return; }
+            if(currentOrder.length === 0) { alert('ऑर्डर खाली है! कृपया पहले कोई आइटम जोड़ें।'); return; }
             let grandTotal = document.getElementById('grandTotal').innerText;
             ordersRef.push({
                 items: currentOrder,
@@ -335,6 +337,16 @@
                 updateOrderUI();
             }
         }
+
+        // Force touch response for all buttons on mobile browsers
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    btn.click();
+                }, {passive: false});
+            });
+        });
 
         renderItems(menuItems);
     </script>
