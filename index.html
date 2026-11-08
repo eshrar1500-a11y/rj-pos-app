@@ -12,21 +12,19 @@
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
         button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
-        /* प्रिंट करते वक्त सिर्फ बिल और टोटल ही दिखाई देगा, बाकी पूरा ऐप छुप जाएगा */
+        #hiddenReceipt, #hiddenKOT { display: none; }
+
         @media print {
-            body * {
-                visibility: hidden !important;
-            }
-            #printableReceipt, #printableReceipt * {
-                visibility: visible !important;
-            }
-            #printableReceipt {
+            body * { display: none !important; }
+            #hiddenReceipt, #hiddenReceipt *, #hiddenKOT, #hiddenKOT * { display: block !important; }
+            #hiddenReceipt, #hiddenKOT {
                 position: absolute;
                 left: 0;
                 top: 0;
                 width: 100%;
-                background: white;
+                font-family: monospace;
                 color: black;
+                background: white;
                 padding: 10px;
             }
         }
@@ -38,14 +36,14 @@
     <header class="bg-gray-900 border-b border-gray-800 px-3 py-2 flex justify-between items-center shrink-0">
         <div class="flex items-center gap-2">
             <button type="button" class="text-gray-300 text-base p-1">☰</button>
-            <div class="bg-white text-gray-950 font-black px-2 py-0.5 rounded text-sm tracking-wider flex items-center gap-0.5 shadow">
+            <div id="shopTitleBadge" class="bg-white text-gray-950 font-black px-2 py-0.5 rounded text-sm tracking-wider flex items-center gap-0.5 shadow">
                 <span class="text-red-600">R</span>J
             </div>
-            <span class="font-bold text-sm text-gray-200">New Order & Billing</span>
+            <span id="shopNameHeader" class="font-bold text-sm text-gray-200">New Order & Billing</span>
         </div>
         <div class="flex items-center gap-3 text-gray-300 text-sm">
             <span>🔔</span>
-            <span>⋮</span>
+            <span onclick="openSettings()" class="cursor-pointer">⚙️</span>
         </div>
     </header>
 
@@ -60,39 +58,17 @@
                 <button type="button" onclick="filterCategory('all')" class="w-full bg-red-600 text-white p-2 rounded-md font-medium flex flex-col items-center gap-0.5 text-[10px] shadow">
                     <span class="text-sm">🍽️</span> All
                 </button>
-                <button type="button" onclick="filterCategory('Starters')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>🍗</span> Starters
-                </button>
-                <button type="button" onclick="filterCategory('Soups')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>🥣</span> Soups
-                </button>
-                <button type="button" onclick="filterCategory('Indian Breads')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>🫓</span> Breads
-                </button>
-                <button type="button" onclick="filterCategory('Rice & Biryani')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>🍚</span> Biryani
-                </button>
-                <button type="button" onclick="filterCategory('Pizza')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>🍕</span> Pizza
-                </button>
-                <button type="button" onclick="filterCategory('South Indian')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>🥘</span> South Indian
-                </button>
-                <button type="button" onclick="filterCategory('Ice Cream')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>🍨</span> Ice Cream
-                </button>
-                <button type="button" onclick="filterCategory('Beverages')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>🥤</span> Beverages
-                </button>
-                <button type="button" onclick="filterCategory('Desserts')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>🍰</span> Desserts
-                </button>
-                <button type="button" onclick="filterCategory('Combo')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>👑</span> Combo
-                </button>
-                <button type="button" onclick="filterCategory('Others')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]">
-                    <span>⋯</span> Others
-                </button>
+                <button type="button" onclick="filterCategory('Starters')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍗</span> Starters</button>
+                <button type="button" onclick="filterCategory('Soups')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🥣</span> Soups</button>
+                <button type="button" onclick="filterCategory('Indian Breads')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🫓</span> Breads</button>
+                <button type="button" onclick="filterCategory('Rice & Biryani')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍚</span> Biryani</button>
+                <button type="button" onclick="filterCategory('Pizza')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍕</span> Pizza</button>
+                <button type="button" onclick="filterCategory('South Indian')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🥘</span> South Indian</button>
+                <button type="button" onclick="filterCategory('Ice Cream')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍨</span> Ice Cream</button>
+                <button type="button" onclick="filterCategory('Beverages')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🥤</span> Beverages</button>
+                <button type="button" onclick="filterCategory('Desserts')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍰</span> Desserts</button>
+                <button type="button" onclick="filterCategory('Combo')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>👑</span> Combo</button>
+                <button type="button" onclick="filterCategory('Others')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>⋯</span> Others</button>
             </div>
 
             <!-- Items List Section -->
@@ -135,30 +111,26 @@
                     </div>
                 </div>
 
-                <!-- Printable Receipt Area (Only items & totals will print) -->
-                <div id="printableReceipt">
-                    <div class="text-center font-bold text-sm mb-1 hidden print:block text-black">RJ RESTAURANT - BILL</div>
-                    <!-- Order Items Header -->
-                    <div class="flex justify-between text-[10px] font-bold text-gray-400 print:text-black border-b border-gray-800 print:border-gray-400 pb-1 px-1 mb-1">
-                        <span>Item Name</span>
-                        <div class="flex gap-4">
-                            <span>Qty</span>
-                            <span>Price</span>
-                            <span>Total</span>
-                        </div>
+                <!-- Order Items Header -->
+                <div class="flex justify-between text-[10px] font-bold text-gray-400 border-b border-gray-800 pb-1 px-1 mb-1">
+                    <span>Item Name</span>
+                    <div class="flex gap-4">
+                        <span>Qty</span>
+                        <span>Price</span>
+                        <span>Total</span>
                     </div>
-                    
-                    <div id="orderList" class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                        <p class="text-gray-500 text-center py-4">No items added yet.</p>
-                    </div>
+                </div>
+                
+                <div id="orderList" class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                    <p class="text-gray-500 text-center py-4">No items added yet.</p>
                 </div>
 
                 <!-- Note / Special Instruction -->
-                <input type="text" placeholder="Note / Special Instruction (Optional)..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-300 mt-2 outline-none print:hidden">
+                <input type="text" id="orderNote" placeholder="Note / Special Instruction (Optional)..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-300 mt-2 outline-none">
             </div>
 
             <!-- Calculation & Action Buttons -->
-            <div class="border-t border-gray-800 pt-2 space-y-1.5 shrink-0 pb-8 print:hidden">
+            <div class="border-t border-gray-800 pt-2 space-y-1.5 shrink-0 pb-8">
                 <div class="flex justify-between text-gray-400 text-xs">
                     <span>Sub Total</span>
                     <span id="subTotal" class="text-white font-semibold">₹0</span>
@@ -186,19 +158,55 @@
                 <!-- Bottom Action Buttons -->
                 <div class="grid grid-cols-3 gap-1 pt-1">
                     <button type="button" onclick="saveOrder()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded font-bold shadow text-sm">SAVE</button>
-                    <button type="button" onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold shadow text-sm">PRINT</button>
-                    <button type="button" onclick="clearOrder()" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded font-bold shadow text-sm">KOT</button>
+                    <button type="button" onclick="printCustomerBill()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold shadow text-sm">PRINT</button>
+                    <button type="button" onclick="printKOT()" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded font-bold shadow text-sm">KOT</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Hidden Customer Bill Receipt (For Print) -->
+    <div id="hiddenReceipt">
+        <h2 id="receiptShopName" style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">RJ RESTAURANT</h2>
+        <p style="text-align:center; font-size:11px; margin-bottom:8px;">CUSTOMER BILL</p>
+        <div style="font-size:11px; margin-bottom:5px;">Table: T3 | Persons: 2</div>
+        <hr style="border-top:1px dashed black; margin-bottom:8px;">
+        <div id="receiptItemsList"></div>
+        <hr style="border-top:1px dashed black; margin:8px 0;">
+        <div id="receiptTotals" style="font-size:12px; font-weight:bold;"></div>
+        <p style="text-align:center; font-size:10px; margin-top:12px;">Thank You! Visit Again.</p>
+    </div>
+
+    <!-- Hidden KOT Receipt (For Kitchen Print) -->
+    <div id="hiddenKOT">
+        <h2 style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">KITCHEN ORDER TICKET (KOT)</h2>
+        <div style="font-size:11px; margin-bottom:5px;">Table: T3 | Time: <span id="kotTime"></span></div>
+        <hr style="border-top:1px dashed black; margin-bottom:8px;">
+        <div id="kotItemsList"></div>
+        <div id="kotNote" style="font-size:11px; margin-top:8px; font-weight:bold;"></div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-sm space-y-3">
+            <h3 class="font-bold text-base text-amber-400">⚙️ Restaurant Settings</h3>
+            <div>
+                <label class="text-xs text-gray-400 block mb-1">Restaurant Name</label>
+                <input type="text" id="settingShopName" value="RJ Restaurant" class="w-full bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeSettings()" class="bg-gray-700 px-3 py-1.5 rounded text-xs font-bold">Cancel</button>
+                <button type="button" onclick="saveSettings()" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Navigation Bar -->
-    <footer class="bg-gray-900 border-t border-gray-800 grid grid-cols-4 text-center py-1.5 shrink-0 text-[10px] font-medium print:hidden">
+    <footer class="bg-gray-900 border-t border-gray-800 grid grid-cols-4 text-center py-1.5 shrink-0 text-[10px] font-medium">
         <button type="button" class="text-red-500 flex flex-col items-center gap-0.5 p-1"><span>🛒</span> New Order</button>
-        <button type="button" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>🪑</span> Running Tables</button>
-        <button type="button" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>📊</span> Reports</button>
-        <button type="button" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>⚙️</span> Settings</button>
+        <button type="button" onclick="showToast('Running Tables feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>🪑</span> Tables</button>
+        <button type="button" onclick="showToast('Reports feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>📊</span> Reports</button>
+        <button type="button" onclick="openSettings()" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>⚙️</span> Settings</button>
     </footer>
 
     <script>
@@ -212,6 +220,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const ordersRef = db.ref('orders/table_T3');
+
+        let restaurantName = localStorage.getItem('rj_shop_name') || "RJ Restaurant";
+        document.getElementById('shopNameHeader').innerText = restaurantName;
 
         const menuItems = [
             { name: "Margherita Pizza", price: 180, category: "Pizza", tag: "Veg" },
@@ -240,9 +251,7 @@
             toast.innerText = message;
             toast.className = `absolute top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded shadow-lg text-[11px] font-bold z-50 transition-opacity duration-300 ${isError ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`;
             toast.style.opacity = '1';
-            setTimeout(() => {
-                toast.style.opacity = '0';
-            }, 2000);
+            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
         }
 
         function renderItems(items) {
@@ -319,20 +328,19 @@
                 let total = item.price * item.qty;
                 sub += total;
                 return `
-                    <div class="flex justify-between items-center bg-gray-800 print:bg-white p-1.5 rounded text-xs">
+                    <div class="flex justify-between items-center bg-gray-800 p-1.5 rounded text-xs">
                         <div class="flex items-center gap-1">
-                            <button type="button" onclick="removeItem(${idx})" class="text-red-400 font-bold px-1.5 print:hidden">✕</button>
-                            <span class="text-gray-200 print:text-black truncate w-24">${item.name}</span>
+                            <button type="button" onclick="removeItem(${idx})" class="text-red-400 font-bold px-1.5">✕</button>
+                            <span class="text-gray-200 truncate w-24">${item.name}</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <div class="flex items-center bg-gray-700 print:hidden rounded px-1">
+                            <div class="flex items-center bg-gray-700 rounded px-1">
                                 <button type="button" onclick="changeQty(${idx}, -1)" class="text-red-300 font-bold px-1.5">-</button>
                                 <span class="font-bold px-1.5">${item.qty}</span>
                                 <button type="button" onclick="changeQty(${idx}, 1)" class="text-emerald-300 font-bold px-1.5">+</button>
                             </div>
-                            <span class="print:inline hidden font-bold px-1">x${item.qty}</span>
-                            <span class="w-8 text-right text-gray-300 print:text-black">₹${item.price}</span>
-                            <span class="w-10 text-right text-amber-400 print:text-black font-bold">₹${total}</span>
+                            <span class="w-8 text-right text-gray-300">₹${item.price}</span>
+                            <span class="w-10 text-right text-amber-400 font-bold">₹${total}</span>
                         </div>
                     </div>
                 `;
@@ -349,9 +357,73 @@
             grandTotal.innerText = '₹' + Math.round(grand);
         }
 
+        // Print Customer Bill (Only Bill)
+        function printCustomerBill() {
+            if(currentOrder.length === 0) {
+                showToast('ऑर्डर खाली है!', true);
+                return;
+            }
+            let receiptHTML = '';
+            let sub = 0;
+            currentOrder.forEach(item => {
+                let total = item.price * item.qty;
+                sub += total;
+                receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                    <span>${item.name} (x${item.qty})</span>
+                    <span>₹${total}</span>
+                </div>`;
+            });
+
+            let discountPercent = parseFloat(document.getElementById('discountInput').value) || 0;
+            let discountAmount = (sub * discountPercent) / 100;
+            let taxable = sub - discountAmount;
+            let tax = Math.round(taxable * 0.05);
+            let grand = Math.round(taxable + tax);
+
+            document.getElementById('receiptShopName').innerText = restaurantName;
+            document.getElementById('receiptItemsList').innerHTML = receiptHTML;
+            document.getElementById('receiptTotals').innerHTML = `
+                <div style="display:flex; justify-content:space-between;"><span>Sub Total:</span><span>₹${sub}</span></div>
+                ${discountPercent > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Discount (${discountPercent}%):</span><span>-₹${Math.round(discountAmount)}</span></div>` : ''}
+                <div style="display:flex; justify-content:space-between;"><span>GST (5%):</span><span>₹${tax}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:4px; border-top:1px solid black; padding-top:4px;"><span>Grand Total:</span><span>₹${grand}</span></div>
+                <div style="font-size:10px; margin-top:4px;">Payment: ${selectedPayment}</div>
+            `;
+
+            // Temporarily hide KOT and show Receipt for printing
+            document.getElementById('hiddenKOT').style.display = 'none';
+            document.getElementById('hiddenReceipt').style.display = 'block';
+            window.print();
+        }
+
+        // Print Kitchen Order Ticket (KOT)
+        function printKOT() {
+            if(currentOrder.length === 0) {
+                showToast('ऑर्डर खाली है!', true);
+                return;
+            }
+            let kotHTML = '';
+            currentOrder.forEach(item => {
+                kotHTML += `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; font-weight:bold;">
+                    <span>${item.name}</span>
+                    <span>QTY: ${item.qty}</span>
+                </div>`;
+            });
+
+            let noteText = document.getElementById('orderNote').value;
+            document.getElementById('kotTime').innerText = new Date().toLocaleTimeString();
+            document.getElementById('kotItemsList').innerHTML = kotHTML;
+            document.getElementById('kotNote').innerText = noteText ? "Note: " + noteText : "";
+
+            // Temporarily hide Receipt and show KOT for printing
+            document.getElementById('hiddenReceipt').style.display = 'none';
+            document.getElementById('hiddenKOT').style.display = 'block';
+            window.print();
+        }
+
         function saveOrder() {
             if(currentOrder.length === 0) { 
-                showToast('ऑर्डर खाली है! कृपया पहले आइटम जोड़ें।', true); 
+                showToast('ऑर्डर खाली है!', true); 
                 return; 
             }
             let grandTotal = document.getElementById('grandTotal').innerText;
@@ -365,6 +437,7 @@
                     showToast('ऑर्डर Firebase पर सेव हो गया!');
                     currentOrder = [];
                     updateOrderUI();
+                    document.getElementById('orderNote').value = '';
                 } else {
                     showToast('सेव करने में त्रुटि!', true);
                 }
@@ -378,7 +451,28 @@
             }
             currentOrder = [];
             updateOrderUI();
-            showToast('KOT क्लियर कर दिया गया');
+            showToast('आइटम्स साफ़ कर दिए गए');
+        }
+
+        // Settings Modal Controls
+        function openSettings() {
+            document.getElementById('settingShopName').value = restaurantName;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveSettings() {
+            let newName = document.getElementById('settingShopName').value.trim();
+            if(newName) {
+                restaurantName = newName;
+                localStorage.setItem('rj_shop_name', restaurantName);
+                document.getElementById('shopNameHeader').innerText = restaurantName;
+                showToast('सेटिंग्स सेव हो गई!');
+            }
+            closeSettings();
         }
 
         renderItems(menuItems);
