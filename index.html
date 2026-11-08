@@ -35,14 +35,14 @@
     <header class="bg-gray-900 border-b border-gray-800 px-3 py-2 flex justify-between items-center shrink-0">
         <div class="flex items-center gap-2">
             <button type="button" class="text-gray-300 text-base p-1">☰</button>
-            <div id="shopTitleBadge" class="bg-white text-gray-950 font-black px-2 py-0.5 rounded text-sm tracking-wider flex items-center gap-0.5 shadow">
+            <div class="bg-white text-gray-950 font-black px-2 py-0.5 rounded text-sm tracking-wider flex items-center gap-0.5 shadow">
                 <span class="text-red-600">R</span>J
             </div>
             <span id="shopNameHeader" class="font-bold text-sm text-gray-200">New Order & Billing</span>
         </div>
         <div class="flex items-center gap-3 text-gray-300 text-sm">
             <span>🔔</span>
-            <span onclick="openSettings()" class="cursor-pointer text-base p-1">⚙️</span>
+            <span id="topSettingsBtn" onclick="openSettings()" class="cursor-pointer text-base p-1">⚙️</span>
         </div>
     </header>
 
@@ -98,11 +98,11 @@
                     <div class="text-gray-400 py-1">Billing</div>
                 </div>
 
-                <!-- Table & Persons Info Bar -->
+                <!-- Table & Token Info Bar -->
                 <div class="grid grid-cols-2 bg-gray-800/80 border border-gray-700 rounded-md p-1.5 mb-2 text-center">
                     <div class="border-r border-gray-700">
-                        <span class="text-[9px] text-gray-400 block">Table No.</span>
-                        <span class="font-black text-sm text-amber-400">🚪 T3</span>
+                        <span class="text-[9px] text-gray-400 block">Token No.</span>
+                        <span id="tokenNoDisplay" class="font-black text-sm text-amber-400">#1</span>
                     </div>
                     <div>
                         <span class="text-[9px] text-gray-400 block">Persons</span>
@@ -167,8 +167,8 @@
     <!-- Hidden Customer Bill Receipt -->
     <div id="hiddenReceipt">
         <h2 id="receiptShopName" style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">RJ RESTAURANT</h2>
-        <p style="text-align:center; font-size:11px; margin-bottom:8px;">CUSTOMER BILL</p>
-        <div style="font-size:11px; margin-bottom:5px;">Table: T3 | Persons: 2</div>
+        <p style="text-align:center; font-size:11px; margin-bottom:4px;">CUSTOMER BILL</p>
+        <div style="font-size:11px; margin-bottom:6px;">Token: <span id="receiptToken"></span> | Persons: 2</div>
         <hr style="border-top:1px dashed black; margin-bottom:8px;">
         <div id="receiptItemsList"></div>
         <hr style="border-top:1px dashed black; margin:8px 0;">
@@ -178,8 +178,8 @@
 
     <!-- Hidden KOT Receipt -->
     <div id="hiddenKOT">
-        <h2 style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">KITCHEN ORDER TICKET (KOT)</h2>
-        <div style="font-size:11px; margin-bottom:5px;">Table: T3 | Time: <span id="kotTime"></span></div>
+        <h2 style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">KITCHEN ORDER TICKET</h2>
+        <div style="font-size:11px; margin-bottom:6px;">Token: <span id="kotToken"></span> | Time: <span id="kotTime"></span></div>
         <hr style="border-top:1px dashed black; margin-bottom:8px;">
         <div id="kotItemsList"></div>
         <div id="kotNote" style="font-size:11px; margin-top:8px; font-weight:bold;"></div>
@@ -205,10 +205,10 @@
         <button type="button" class="text-red-500 flex flex-col items-center gap-0.5 p-1"><span>🛒</span> New Order</button>
         <button type="button" onclick="showToast('Running Tables feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>🪑</span> Tables</button>
         <button type="button" onclick="showToast('Reports feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>📊</span> Reports</button>
-        <button type="button" onclick="openSettings()" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>⚙️</span> Settings</button>
+        <button type="button" id="footerSettingsBtn" onclick="openSettings()" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>⚙️</span> Settings</button>
     </footer>
 
-    <!-- Firebase SDK Imports via Module Scripts -->
+    <!-- Firebase SDK Module Setup -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -223,9 +223,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Global functions attachment
-        window.saveOrderToFirebase = function(currentOrder, selectedPayment, grandTotal, callback) {
-            const ordersRef = ref(db, 'orders/table_T3');
+        window.saveOrderToFirebase = function(currentOrder, selectedPayment, grandTotal, tokenNo, callback) {
+            const ordersRef = ref(db, 'orders/token_' + tokenNo);
             let cleanOrder = currentOrder.map(i => ({
                 name: i.name,
                 price: Number(i.price),
@@ -233,6 +232,7 @@
             }));
 
             push(ordersRef, {
+                token: tokenNo,
                 items: cleanOrder,
                 total: grandTotal,
                 paymentMode: selectedPayment,
@@ -249,7 +249,11 @@
         let restaurantName = localStorage.getItem('rj_shop_name') || "RJ Restaurant";
         document.getElementById('shopNameHeader').innerText = restaurantName;
 
+        let tokenNumber = parseInt(localStorage.getItem('rj_token_no')) || 1;
+        document.getElementById('tokenNoDisplay').innerText = '#' + tokenNumber;
+
         const menuItems = [
+            { name: "Chikan Shawarma", price: 100, category: "Starters", tag: "Non-Veg" },
             { name: "Margherita Pizza", price: 180, category: "Pizza", tag: "Veg" },
             { name: "Veg Burger", price: 120, category: "Pizza", tag: "Veg" },
             { name: "Cold Coffee", price: 80, category: "Beverages", tag: "Beverages" },
@@ -398,7 +402,7 @@
             currentOrder.forEach(item => {
                 let total = item.price * item.qty;
                 sub += total;
-                receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
                     <span>${item.name} (x${item.qty})</span>
                     <span>₹${total}</span>
                 </div>`;
@@ -411,13 +415,14 @@
             let grand = Math.round(taxable + tax);
 
             document.getElementById('receiptShopName').innerText = restaurantName;
+            document.getElementById('receiptToken').innerText = '#' + tokenNumber;
             document.getElementById('receiptItemsList').innerHTML = receiptHTML;
             document.getElementById('receiptTotals').innerHTML = `
                 <div style="display:flex; justify-content:space-between;"><span>Sub Total:</span><span>₹${sub}</span></div>
                 ${discountPercent > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Discount (${discountPercent}%):</span><span>-₹${Math.round(discountAmount)}</span></div>` : ''}
                 <div style="display:flex; justify-content:space-between;"><span>GST (5%):</span><span>₹${tax}</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:4px; border-top:1px solid black; padding-top:4px;"><span>Grand Total:</span><span>₹${grand}</span></div>
-                <div style="font-size:10px; margin-top:4px;">Payment: ${selectedPayment}</div>
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:5px; border-top:1px solid black; padding-top:5px;"><span>Grand Total:</span><span>₹${grand}</span></div>
+                <div style="font-size:11px; margin-top:5px;">Payment Mode: ${selectedPayment}</div>
             `;
 
             const receiptEl = document.getElementById('hiddenReceipt');
@@ -440,6 +445,7 @@
             });
 
             let noteText = document.getElementById('orderNote').value;
+            document.getElementById('kotToken').innerText = '#' + tokenNumber;
             document.getElementById('kotTime').innerText = new Date().toLocaleTimeString();
             document.getElementById('kotItemsList').innerHTML = kotHTML;
             document.getElementById('kotNote').innerText = noteText ? "Note: " + noteText : "";
@@ -458,12 +464,16 @@
             let grandTotal = document.getElementById('grandTotal').innerText;
             
             if(typeof window.saveOrderToFirebase === 'function') {
-                window.saveOrderToFirebase(currentOrder, selectedPayment, grandTotal, (err) => {
+                window.saveOrderToFirebase(currentOrder, selectedPayment, grandTotal, tokenNumber, (err) => {
                     if(!err) {
                         showToast('ऑर्डर Firebase पर सेव हो गया!');
                         currentOrder = [];
                         updateOrderUI();
                         document.getElementById('orderNote').value = '';
+                        // Increment Token Number for next order
+                        tokenNumber++;
+                        localStorage.setItem('rj_token_no', tokenNumber);
+                        document.getElementById('tokenNoDisplay').innerText = '#' + tokenNumber;
                     } else {
                         showToast('सेव करने में त्रुटि!', true);
                     }
