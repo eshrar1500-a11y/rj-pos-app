@@ -1,481 +1,271 @@
+
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RJ Restaurant POS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <style>
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
-        button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-
-        #hiddenReceipt, #hiddenKOT { display: none; }
-
-        @media print {
-            body * { display: none !important; }
-            #hiddenReceipt.printing, #hiddenReceipt.printing * { display: block !important; }
-            #hiddenKOT.printing, #hiddenKOT.printing * { display: block !important; }
-            #hiddenReceipt.printing, #hiddenKOT.printing {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                font-family: monospace;
-                color: black;
-                background: white;
-                padding: 10px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RJ Restaurant POS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#374151;border-radius:2px}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#hiddenReceipt,#hiddenKOT{display:none}
+@media print{
+body *{visibility:hidden!important}
+#hiddenReceipt.printing,#hiddenReceipt.printing *{visibility:visible!important}
+#hiddenKOT.printing,#hiddenKOT.printing *{visibility:visible!important}
+#hiddenReceipt.printing,#hiddenKOT.printing{
+display:block!important;position:absolute;left:0;top:0;width:100%;
+font-family:monospace;color:#000;background:#fff;padding:10px}
+}
+#settingsModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);align-items:center;justify-content:center;z-index:99999;padding:16px}
+#settingsModal.show-settings{display:flex!important}
+</style>
 </head>
 <body class="bg-gray-950 text-white h-screen flex flex-col overflow-hidden text-xs font-sans">
-    
-    <!-- Top Header -->
-    <header class="bg-gray-900 border-b border-gray-800 px-3 py-2 flex justify-between items-center shrink-0">
-        <div class="flex items-center gap-2">
-            <button type="button" class="text-gray-300 text-base p-1">☰</button>
-            <div id="shopTitleBadge" class="bg-white text-gray-950 font-black px-2 py-0.5 rounded text-sm tracking-wider flex items-center gap-0.5 shadow">
-                <span class="text-red-600">R</span>J
-            </div>
-            <span id="shopNameHeader" class="font-bold text-sm text-gray-200">New Order & Billing</span>
-        </div>
-        <div class="flex items-center gap-3 text-gray-300 text-sm">
-            <span>🔔</span>
-            <span onclick="openSettings()" class="cursor-pointer text-base p-1">⚙️</span>
-        </div>
-    </header>
 
-    <!-- Main Workspace -->
-    <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-1 p-1.5 overflow-hidden bg-gray-950">
-        
-        <!-- Left: Categories Sidebar & Item Catalog -->
-        <div class="md:col-span-7 grid grid-cols-12 gap-1 bg-gray-900 p-1.5 rounded-lg border border-gray-800 overflow-hidden">
-            
-            <!-- Category Icons Sidebar -->
-            <div class="col-span-3 overflow-y-auto space-y-1 pr-1 border-r border-gray-800 text-center">
-                <button type="button" onclick="filterCategory('all')" class="w-full bg-red-600 text-white p-2 rounded-md font-medium flex flex-col items-center gap-0.5 text-[10px] shadow">
-                    <span class="text-sm">🍽️</span> All
-                </button>
-                <button type="button" onclick="filterCategory('Starters')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍗</span> Starters</button>
-                <button type="button" onclick="filterCategory('Soups')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🥣</span> Soups</button>
-                <button type="button" onclick="filterCategory('Indian Breads')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🫓</span> Breads</button>
-                <button type="button" onclick="filterCategory('Rice & Biryani')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍚</span> Biryani</button>
-                <button type="button" onclick="filterCategory('Pizza')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍕</span> Pizza</button>
-                <button type="button" onclick="filterCategory('South Indian')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🥘</span> South Indian</button>
-                <button type="button" onclick="filterCategory('Ice Cream')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍨</span> Ice Cream</button>
-                <button type="button" onclick="filterCategory('Beverages')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🥤</span> Beverages</button>
-                <button type="button" onclick="filterCategory('Desserts')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍰</span> Desserts</button>
-                <button type="button" onclick="filterCategory('Combo')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>👑</span> Combo</button>
-                <button type="button" onclick="filterCategory('Others')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>⋯</span> Others</button>
-            </div>
+<header class="bg-gray-900 border-b border-gray-800 px-3 py-2 flex justify-between items-center shrink-0">
+<div class="flex items-center gap-2">
+<button type="button" class="text-gray-300 text-base p-1">☰</button>
+<div class="bg-white text-gray-950 font-black px-2 py-0.5 rounded text-sm tracking-wider flex items-center gap-0.5 shadow"><span class="text-red-600">R</span>J</div>
+<span id="shopNameHeader" class="font-bold text-sm text-gray-200">RJ Restaurant</span>
+</div>
+<div class="flex items-center gap-3 text-gray-300 text-sm">
+<span>🔔</span><button type="button" onclick="openSettings()" class="cursor-pointer text-base p-1">⚙️</button>
+</div>
+</header>
 
-            <!-- Items List Section -->
-            <div class="col-span-9 flex flex-col gap-2 overflow-hidden pl-1">
-                <input type="text" id="searchBox" onkeyup="handleSearch()" placeholder="🔍 Search item..." class="bg-gray-800 border border-gray-700 px-2.5 py-1.5 rounded-md text-white outline-none focus:border-red-500 text-xs">
-                
-                <div class="flex gap-1 overflow-x-auto pb-1 shrink-0 text-[10px]">
-                    <button type="button" onclick="filterTag('all')" class="bg-red-600 px-2.5 py-0.5 rounded-full whitespace-nowrap font-medium">All</button>
-                    <button type="button" onclick="filterTag('Veg')" class="bg-gray-800 text-gray-300 px-2.5 py-0.5 rounded-full whitespace-nowrap">Veg</button>
-                    <button type="button" onclick="filterTag('Non-Veg')" class="bg-gray-800 text-gray-300 px-2.5 py-0.5 rounded-full whitespace-nowrap">Non-Veg</button>
-                    <button type="button" onclick="filterTag('Beverages')" class="bg-gray-800 text-gray-300 px-2.5 py-0.5 rounded-full whitespace-nowrap">Beverages</button>
-                </div>
+<div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-1 p-1.5 overflow-hidden bg-gray-950">
+<div class="md:col-span-7 grid grid-cols-12 gap-1 bg-gray-900 p-1.5 rounded-lg border border-gray-800 overflow-hidden">
+<div class="col-span-3 overflow-y-auto space-y-1 pr-1 border-r border-gray-800 text-center">
+<button onclick="filterCategory('all')" class="w-full bg-red-600 text-white p-2 rounded-md font-medium flex flex-col items-center text-[10px]">🍽️ All</button>
+<button onclick="filterCategory('Starters')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">🍗 Starters</button>
+<button onclick="filterCategory('Soups')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">🥣 Soups</button>
+<button onclick="filterCategory('Indian Breads')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">🫓 Breads</button>
+<button onclick="filterCategory('Rice & Biryani')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">🍚 Biryani</button>
+<button onclick="filterCategory('Pizza')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">🍕 Pizza</button>
+<button onclick="filterCategory('South Indian')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">🥘 South Indian</button>
+<button onclick="filterCategory('Ice Cream')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">🍨 Ice Cream</button>
+<button onclick="filterCategory('Beverages')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">🥤 Beverages</button>
+<button onclick="filterCategory('Desserts')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">🍰 Desserts</button>
+<button onclick="filterCategory('Combo')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">👑 Combo</button>
+<button onclick="filterCategory('Others')" class="catbtn w-full bg-gray-800 text-gray-300 p-1.5 rounded-md flex flex-col items-center">⋯ Others</button>
+</div>
 
-                <div id="itemList" class="flex-1 overflow-y-auto space-y-1.5 pr-1"></div>
-            </div>
-        </div>
+<div class="col-span-9 flex flex-col gap-2 overflow-hidden pl-1">
+<input id="searchBox" oninput="handleSearch()" placeholder="🔍 Search item..." class="bg-gray-800 border border-gray-700 px-2.5 py-1.5 rounded-md text-white outline-none text-xs">
+<div class="flex gap-1 overflow-x-auto pb-1 shrink-0 text-[10px]">
+<button onclick="filterTag('all')" class="bg-red-600 px-2.5 py-0.5 rounded-full">All</button>
+<button onclick="filterTag('Veg')" class="bg-gray-800 px-2.5 py-0.5 rounded-full">Veg</button>
+<button onclick="filterTag('Non-Veg')" class="bg-gray-800 px-2.5 py-0.5 rounded-full">Non-Veg</button>
+<button onclick="filterTag('Beverages')" class="bg-gray-800 px-2.5 py-0.5 rounded-full">Beverages</button>
+</div>
+<div id="itemList" class="flex-1 overflow-y-auto space-y-1.5 pr-1"></div>
+</div>
+</div>
 
-        <!-- Right: Billing & Order Panel -->
-        <div class="md:col-span-5 bg-gray-900 p-2 rounded-lg border border-gray-800 flex flex-col justify-between overflow-hidden relative">
-            
-            <!-- Toast Notification Box -->
-            <div id="toast" class="absolute top-2 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-3 py-1 rounded shadow-lg text-[11px] font-bold opacity-0 transition-opacity duration-300 pointer-events-none z-50"></div>
+<div class="md:col-span-5 bg-gray-900 p-2 rounded-lg border border-gray-800 flex flex-col justify-between overflow-hidden relative">
+<div id="toast" class="absolute top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded shadow text-[11px] font-bold opacity-0 pointer-events-none z-50"></div>
+<div>
+<div class="grid grid-cols-2 bg-gray-800 rounded-md p-0.5 mb-2 font-bold text-center"><div class="bg-red-600 py-1 rounded">New Order</div><div class="text-gray-400 py-1">Billing</div></div>
+<div class="grid grid-cols-2 bg-gray-800/80 border border-gray-700 rounded-md p-1.5 mb-2 text-center">
+<div class="border-r border-gray-700"><span class="text-[9px] text-gray-400 block">Table No.</span><span class="font-black text-sm text-amber-400">🚪 T3</span></div>
+<div><span class="text-[9px] text-gray-400 block">Persons</span><span class="font-black text-sm text-amber-400">👥 2</span></div>
+</div>
+<div class="flex justify-between text-[10px] font-bold text-gray-400 border-b border-gray-800 pb-1 px-1 mb-1"><span>Item Name</span><div class="flex gap-4"><span>Qty</span><span>Price</span><span>Total</span></div></div>
+<div id="orderList" class="space-y-1.5 max-h-32 overflow-y-auto pr-1"><p class="text-gray-500 text-center py-4">No items added yet.</p></div>
+<input id="orderNote" placeholder="Note / Special Instruction (Optional)..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-300 mt-2 outline-none">
+</div>
 
-            <div>
-                <!-- Top Tabs -->
-                <div class="grid grid-cols-2 bg-gray-800 rounded-md p-0.5 mb-2 font-bold text-center text-xs">
-                    <div class="bg-red-600 text-white py-1 rounded">New Order</div>
-                    <div class="text-gray-400 py-1">Billing</div>
-                </div>
+<div class="border-t border-gray-800 pt-2 space-y-1.5 shrink-0 pb-8">
+<div class="flex justify-between text-gray-400"><span>Sub Total</span><span id="subTotal" class="text-white font-semibold">₹0</span></div>
+<div class="flex justify-between text-gray-400 items-center"><span>Discount (%)</span><input type="number" id="discountInput" value="0" min="0" max="100" oninput="updateOrderUI()" class="w-14 bg-gray-800 border border-gray-700 px-1 py-0.5 rounded text-right text-white"></div>
+<div class="flex justify-between text-gray-400"><span>Tax (GST 5%)</span><span id="taxAmount" class="text-white font-semibold">₹0</span></div>
+<div class="flex justify-between font-black text-sm bg-gray-800 px-2.5 py-1 rounded border border-gray-700"><span>Total</span><span id="grandTotal" class="text-amber-400 text-base">₹0</span></div>
+<div class="grid grid-cols-3 gap-1 pt-1">
+<button onclick="setPaymentMode('Cash')" id="pay-Cash" class="bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500">💵 Cash</button>
+<button onclick="setPaymentMode('Card')" id="pay-Card" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700">💳 Card</button>
+<button onclick="setPaymentMode('Due')" id="pay-Due" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700">👤 Due</button>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1">
+<button onclick="saveOrder()" class="bg-emerald-600 text-white py-3 rounded font-bold shadow text-sm">SAVE</button>
+<button onclick="printCustomerBill()" class="bg-blue-600 text-white py-3 rounded font-bold shadow text-sm">PRINT</button>
+<button onclick="printKOT()" class="bg-amber-600 text-white py-3 rounded font-bold shadow text-sm">KOT</button>
+</div>
+</div>
+</div>
+</div>
 
-                <!-- Table & Persons Info Bar -->
-                <div class="grid grid-cols-2 bg-gray-800/80 border border-gray-700 rounded-md p-1.5 mb-2 text-center">
-                    <div class="border-r border-gray-700">
-                        <span class="text-[9px] text-gray-400 block">Table No.</span>
-                        <span class="font-black text-sm text-amber-400">🚪 T3</span>
-                    </div>
-                    <div>
-                        <span class="text-[9px] text-gray-400 block">Persons</span>
-                        <span class="font-black text-sm text-amber-400">👥 2</span>
-                    </div>
-                </div>
+<div id="hiddenReceipt">
+<h2 id="receiptShopName" style="text-align:center;font-weight:bold;font-size:16px">RJ RESTAURANT</h2>
+<p style="text-align:center;font-size:11px;margin-bottom:8px">CUSTOMER BILL</p>
+<div style="font-size:11px;margin-bottom:5px">Table: T3 | Persons: 2</div><hr style="border-top:1px dashed black;margin-bottom:8px">
+<div id="receiptItemsList"></div><hr style="border-top:1px dashed black;margin:8px 0">
+<div id="receiptTotals" style="font-size:12px;font-weight:bold"></div>
+<p style="text-align:center;font-size:10px;margin-top:12px">Thank You! Visit Again.</p>
+</div>
 
-                <!-- Order Items Header -->
-                <div class="flex justify-between text-[10px] font-bold text-gray-400 border-b border-gray-800 pb-1 px-1 mb-1">
-                    <span>Item Name</span>
-                    <div class="flex gap-4">
-                        <span>Qty</span>
-                        <span>Price</span>
-                        <span>Total</span>
-                    </div>
-                </div>
-                
-                <div id="orderList" class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                    <p class="text-gray-500 text-center py-4">No items added yet.</p>
-                </div>
+<div id="hiddenKOT">
+<h2 style="text-align:center;font-weight:bold;font-size:16px">KITCHEN ORDER TICKET (KOT)</h2>
+<div style="font-size:11px;margin-bottom:5px">Table: T3 | Time: <span id="kotTime"></span></div>
+<hr style="border-top:1px dashed black;margin-bottom:8px"><div id="kotItemsList"></div>
+<div id="kotNote" style="font-size:11px;margin-top:8px;font-weight:bold"></div>
+</div>
 
-                <!-- Note / Special Instruction -->
-                <input type="text" id="orderNote" placeholder="Note / Special Instruction (Optional)..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-300 mt-2 outline-none">
-            </div>
+<div id="settingsModal">
+<div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-sm space-y-3">
+<h3 class="font-bold text-base text-amber-400">⚙️ Restaurant Settings</h3>
+<label class="text-xs text-gray-400 block mb-1">Restaurant Name</label>
+<input id="settingShopName" value="RJ Restaurant" class="w-full bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs">
+<div class="flex justify-end gap-2 pt-2">
+<button onclick="closeSettings()" class="bg-gray-700 px-3 py-1.5 rounded font-bold">Cancel</button>
+<button onclick="saveSettings()" class="bg-emerald-600 px-3 py-1.5 rounded font-bold">Save</button>
+</div></div></div>
 
-            <!-- Calculation & Action Buttons -->
-            <div class="border-t border-gray-800 pt-2 space-y-1.5 shrink-0 pb-8">
-                <div class="flex justify-between text-gray-400 text-xs">
-                    <span>Sub Total</span>
-                    <span id="subTotal" class="text-white font-semibold">₹0</span>
-                </div>
-                <div class="flex justify-between text-gray-400 text-xs items-center">
-                    <span>Discount (%)</span>
-                    <input type="number" id="discountInput" value="0" oninput="updateOrderUI()" class="w-14 bg-gray-800 border border-gray-700 px-1 py-0.5 rounded text-right text-white outline-none">
-                </div>
-                <div class="flex justify-between text-gray-400 text-xs">
-                    <span>Tax (GST 5%)</span>
-                    <span id="taxAmount" class="text-white font-semibold">₹0</span>
-                </div>
-                <div class="flex justify-between font-black text-sm bg-gray-800 px-2.5 py-1 rounded border border-gray-700">
-                    <span>Total</span>
-                    <span id="grandTotal" class="text-amber-400 text-base">₹0</span>
-                </div>
+<footer class="bg-gray-900 border-t border-gray-800 grid grid-cols-4 text-center py-1.5 shrink-0 text-[10px] font-medium pb-5">
+<button class="text-red-500 flex flex-col items-center p-1">🛒<span>New Order</span></button>
+<button onclick="showToast('Tables feature अभी तैयार नहीं है')" class="text-gray-400 flex flex-col items-center p-1">🪑<span>Tables</span></button>
+<button onclick="showReports()" class="text-gray-400 flex flex-col items-center p-1">📊<span>Reports</span></button>
+<button onclick="openSettings()" class="text-gray-400 flex flex-col items-center p-1">⚙️<span>Settings</span></button>
+</footer>
 
-                <!-- Payment Method Buttons -->
-                <div class="grid grid-cols-3 gap-1 pt-1">
-                    <button type="button" onclick="setPaymentMode('Cash')" id="pay-Cash" class="bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs">💵 Cash</button>
-                    <button type="button" onclick="setPaymentMode('Card')" id="pay-Card" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">💳 Card</button>
-                    <button type="button" onclick="setPaymentMode('Due')" id="pay-Due" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">👤 Due</button>
-                </div>
+<script>
+const firebaseConfig={
+apiKey:"AIzaSyDM06RpXjspQnYx5uD_JKwnkQDvffJMRy4",
+databaseURL:"https://rj-billing-app-default-rtdb.firebaseio.com/",
+projectId:"rj-billing-app",
+storageBucket:"rj-billing-app.firebasestorage.app"
+};
+let db=null,ordersRef=null;
+try{if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();ordersRef=db.ref("orders/table_T3")}catch(e){console.error("Firebase init:",e)}
+let restaurantName=localStorage.getItem("rj_shop_name")||"RJ Restaurant";
+document.getElementById("shopNameHeader").innerText=restaurantName;
 
-                <!-- Bottom Action Buttons -->
-                <div class="grid grid-cols-3 gap-1 pt-1">
-                    <button type="button" onclick="saveOrder()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded font-bold shadow text-sm">SAVE</button>
-                    <button type="button" onclick="printCustomerBill()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold shadow text-sm">PRINT</button>
-                    <button type="button" onclick="printKOT()" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded font-bold shadow text-sm">KOT</button>
-                </div>
-            </div>
-        </div>
-    </div>
+const menuItems=[
+{name:"Margherita Pizza",price:180,category:"Pizza",tag:"Veg"},
+{name:"Veg Burger",price:120,category:"Pizza",tag:"Veg"},
+{name:"Cold Coffee",price:80,category:"Beverages",tag:"Beverages"},
+{name:"French Fries",price:60,category:"Starters",tag:"Veg"},
+{name:"Paneer Pizza",price:200,category:"Pizza",tag:"Veg"},
+{name:"Chicken Biryani",price:160,category:"Rice & Biryani",tag:"Non-Veg"},
+{name:"Veg Pasta",price:140,category:"Others",tag:"Veg"},
+{name:"Chicken Roll",price:100,category:"Starters",tag:"Non-Veg"},
+{name:"Masala Dosa",price:90,category:"South Indian",tag:"Veg"},
+{name:"Ice Cream",price:70,category:"Ice Cream",tag:"Veg"},
+{name:"Tomato Soup",price:60,category:"Soups",tag:"Veg"},
+{name:"Veg Sandwich",price:80,category:"Others",tag:"Veg"},
+{name:"Chocolate Shake",price:90,category:"Beverages",tag:"Beverages"},
+{name:"Mango Shake",price:80,category:"Beverages",tag:"Beverages"},
+{name:"Oreo Shake",price:100,category:"Beverages",tag:"Beverages"},
+{name:"Hot Coffee",price:60,category:"Beverages",tag:"Beverages"}
+];
 
-    <!-- Hidden Customer Bill Receipt -->
-    <div id="hiddenReceipt">
-        <h2 id="receiptShopName" style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">RJ RESTAURANT</h2>
-        <p style="text-align:center; font-size:11px; margin-bottom:8px;">CUSTOMER BILL</p>
-        <div style="font-size:11px; margin-bottom:5px;">Table: T3 | Persons: 2</div>
-        <hr style="border-top:1px dashed black; margin-bottom:8px;">
-        <div id="receiptItemsList"></div>
-        <hr style="border-top:1px dashed black; margin:8px 0;">
-        <div id="receiptTotals" style="font-size:12px; font-weight:bold;"></div>
-        <p style="text-align:center; font-size:10px; margin-top:12px;">Thank You! Visit Again.</p>
-    </div>
+let currentOrder=[],selectedPayment="Cash",activeCategory="all",activeTag="all";
 
-    <!-- Hidden KOT Receipt -->
-    <div id="hiddenKOT">
-        <h2 style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">KITCHEN ORDER TICKET (KOT)</h2>
-        <div style="font-size:11px; margin-bottom:5px;">Table: T3 | Time: <span id="kotTime"></span></div>
-        <hr style="border-top:1px dashed black; margin-bottom:8px;">
-        <div id="kotItemsList"></div>
-        <div id="kotNote" style="font-size:11px; margin-top:8px; font-weight:bold;"></div>
-    </div>
+function showToast(message,isError=false){
+const t=document.getElementById("toast");t.textContent=message;
+t.className="absolute top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded shadow text-[11px] font-bold z-50 "+(isError?"bg-red-600":"bg-emerald-600")+" text-white";
+t.style.opacity="1";clearTimeout(window.toastTimer);
+window.toastTimer=setTimeout(()=>t.style.opacity="0",2500)
+}
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-sm space-y-3">
-            <h3 class="font-bold text-base text-amber-400">⚙️ Restaurant Settings</h3>
-            <div>
-                <label class="text-xs text-gray-400 block mb-1">Restaurant Name</label>
-                <input type="text" id="settingShopName" value="RJ Restaurant" class="w-full bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeSettings()" class="bg-gray-700 px-3 py-1.5 rounded text-xs font-bold">Cancel</button>
-                <button type="button" onclick="saveSettings()" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold">Save</button>
-            </div>
-        </div>
-    </div>
+function renderItems(items){
+const list=document.getElementById("itemList");
+if(!items.length){list.innerHTML='<p class="text-gray-500 text-center py-4">No items found.</p>';return}
+list.innerHTML=items.map(i=>`<div class="flex justify-between items-center bg-gray-800/70 p-2 rounded border border-gray-800"><div><p class="font-semibold text-white">${i.name}</p><p class="text-amber-400 font-bold">₹${i.price}</p></div><button onclick="addItem('${i.name.replace(/'/g,"\\'")}',${i.price})" class="bg-emerald-600 text-white px-3 py-1.5 rounded font-bold">ADD</button></div>`).join("")
+}
 
-    <!-- Bottom Navigation Bar -->
-    <footer class="bg-gray-900 border-t border-gray-800 grid grid-cols-4 text-center py-1.5 shrink-0 text-[10px] font-medium pb-5">
-        <button type="button" class="text-red-500 flex flex-col items-center gap-0.5 p-1"><span>🛒</span> New Order</button>
-        <button type="button" onclick="showToast('Running Tables feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>🪑</span> Tables</button>
-        <button type="button" onclick="showToast('Reports feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>📊</span> Reports</button>
-        <button type="button" onclick="openSettings()" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>⚙️</span> Settings</button>
-    </footer>
+function applyFilters(){
+let q=document.getElementById("searchBox").value.toLowerCase();
+renderItems(menuItems.filter(i=>(activeCategory==="all"||i.category===activeCategory)&&(activeTag==="all"||i.tag===activeTag)&&i.name.toLowerCase().includes(q))
+}
+function filterCategory(c){activeCategory=c;activeTag="all";applyFilters()}
+function filterTag(t){activeTag=t;applyFilters()}
+function handleSearch(){applyFilters()}
 
-    <script>
-        // Firebase Web Setup
-        const firebaseConfig = {
-            apiKey: "AIzaSyDM06RpXjspQnYx5uD_JKwnkQDvffJMRy4",
-            databaseURL: "https://rj-billing-app-default-rtdb.firebaseio.com/",
-            projectId: "rj-billing-app",
-            storageBucket: "rj-billing-app.firebasestorage.app"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const ordersRef = db.ref('orders/table_T3');
+function addItem(name,price){let i=currentOrder.find(x=>x.name===name);if(i)i.qty++;else currentOrder.push({name,price,qty:1});updateOrderUI()}
+function changeQty(i,d){if(!currentOrder[i])return;currentOrder[i].qty+=d;if(currentOrder[i].qty<=0)currentOrder.splice(i,1);updateOrderUI()}
+function removeItem(i){currentOrder.splice(i,1);updateOrderUI()}
 
-        let restaurantName = localStorage.getItem('rj_shop_name') || "RJ Restaurant";
-        document.getElementById('shopNameHeader').innerText = restaurantName;
+function totals(){
+let sub=currentOrder.reduce((s,i)=>s+i.price*i.qty,0);
+let pct=Math.min(100,Math.max(0,parseFloat(document.getElementById("discountInput").value)||0));
+let discount=sub*pct/100,tax=Math.round((sub-discount)*.05),grand=Math.round(sub-discount+tax);
+return{sub,discount,pct,tax,grand}
+}
 
-        const menuItems = [
-            { name: "Margherita Pizza", price: 180, category: "Pizza", tag: "Veg" },
-            { name: "Veg Burger", price: 120, category: "Pizza", tag: "Veg" },
-            { name: "Cold Coffee", price: 80, category: "Beverages", tag: "Beverages" },
-            { name: "French Fries", price: 60, category: "Starters", tag: "Veg" },
-            { name: "Paneer Pizza", price: 200, category: "Pizza", tag: "Veg" },
-            { name: "Chicken Biryani", price: 160, category: "Rice & Biryani", tag: "Non-Veg" },
-            { name: "Veg Pasta", price: 140, category: "Others", tag: "Veg" },
-            { name: "Chicken Roll", price: 100, category: "Starters", tag: "Non-Veg" },
-            { name: "Masala Dosa", price: 90, category: "South Indian", tag: "Veg" },
-            { name: "Ice Cream", price: 70, category: "Ice Cream", tag: "Veg" },
-            { name: "Tomato Soup", price: 60, category: "Soups", tag: "Veg" },
-            { name: "Veg Sandwich", price: 80, category: "Others", tag: "Veg" },
-            { name: "Chocolate Shake", price: 90, category: "Beverages", tag: "Beverages" },
-            { name: "Mango Shake", price: 80, category: "Beverages", tag: "Beverages" },
-            { name: "Oreo Shake", price: 100, category: "Beverages", tag: "Beverages" },
-            { name: "Hot Coffee", price: 60, category: "Beverages", tag: "Beverages" }
-        ];
+function updateOrderUI(){
+const list=document.getElementById("orderList");
+if(!currentOrder.length)list.innerHTML='<p class="text-gray-500 text-center py-4">No items added yet.</p>';
+else list.innerHTML=currentOrder.map((i,n)=>`<div class="flex justify-between items-center bg-gray-800 p-1.5 rounded"><div class="flex items-center gap-1"><button onclick="removeItem(${n})" class="text-red-400 font-bold px-1.5">✕</button><span class="text-gray-200 truncate w-24">${i.name}</span></div><div class="flex items-center gap-2"><div class="flex items-center bg-gray-700 rounded px-1"><button onclick="changeQty(${n},-1)" class="text-red-300 px-1.5">-</button><span class="font-bold px-1.5">${i.qty}</span><button onclick="changeQty(${n},1)" class="text-emerald-300 px-1.5">+</button></div><span class="w-8 text-right">₹${i.price}</span><span class="w-10 text-right text-amber-400 font-bold">₹${i.price*i.qty}</span></div></div>`).join("");
+let t=totals();
+document.getElementById("subTotal").textContent="₹"+t.sub;
+document.getElementById("taxAmount").textContent="₹"+t.tax;
+document.getElementById("grandTotal").textContent="₹"+t.grand
+}
 
-        let currentOrder = [];
-        let selectedPayment = "Cash";
+function setPaymentMode(m){
+selectedPayment=m;
+["Cash","Card","Due"].forEach(x=>{
+let b=document.getElementById("pay-"+x);
+b.className=x===m?"bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500":"bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700"
+})
+}
 
-        function showToast(message, isError = false) {
-            const toast = document.getElementById('toast');
-            toast.innerText = message;
-            toast.className = `absolute top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded shadow-lg text-[11px] font-bold z-50 transition-opacity duration-300 ${isError ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`;
-            toast.style.opacity = '1';
-            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
-        }
+function doPrint(el){
+el.classList.add("printing");
+const clean=()=>{el.classList.remove("printing");window.removeEventListener("afterprint",clean)};
+window.addEventListener("afterprint",clean);window.print();setTimeout(clean,1500)
+}
 
-        function renderItems(items) {
-            const list = document.getElementById('itemList');
-            if(items.length === 0) {
-                list.innerHTML = '<p class="text-gray-500 text-center py-4">No items found.</p>';
-                return;
-            }
-            list.innerHTML = items.map(i => `
-                <div class="flex justify-between items-center bg-gray-800/70 p-2 rounded border border-gray-800">
-                    <div>
-                        <p class="font-semibold text-white">${i.name}</p>
-                        <p class="text-amber-400 font-bold">₹${i.price}</p>
-                    </div>
-                    <button type="button" onclick="addItem('${i.name}', ${i.price})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold text-xs">ADD</button>
-                </div>
-            `).join('');
-        }
+function printCustomerBill(){
+if(!currentOrder.length)return showToast("ऑर्डर खाली है!",true);
+let t=totals();
+document.getElementById("receiptShopName").textContent=restaurantName;
+document.getElementById("receiptItemsList").innerHTML=currentOrder.map(i=>`<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>${i.name} (x${i.qty})</span><span>₹${i.price*i.qty}</span></div>`).join("");
+document.getElementById("receiptTotals").innerHTML=`<div style="display:flex;justify-content:space-between"><span>Sub Total:</span><span>₹${t.sub}</span></div>${t.pct?`<div style="display:flex;justify-content:space-between"><span>Discount (${t.pct}%):</span><span>-₹${Math.round(t.discount)}</span></div>`:""}<div style="display:flex;justify-content:space-between"><span>GST (5%):</span><span>₹${t.tax}</span></div><div style="display:flex;justify-content:space-between;font-size:14px;margin-top:4px;border-top:1px solid;padding-top:4px"><span>Grand Total:</span><span>₹${t.grand}</span></div><div style="font-size:10px;margin-top:4px">Payment: ${selectedPayment}</div>`;
+doPrint(document.getElementById("hiddenReceipt"))
+}
 
-        function filterCategory(cat) {
-            if(cat === 'all') renderItems(menuItems);
-            else renderItems(menuItems.filter(i => i.category === cat));
-        }
+function printKOT(){
+if(!currentOrder.length)return showToast("ऑर्डर खाली है!",true);
+document.getElementById("kotTime").textContent=new Date().toLocaleTimeString();
+document.getElementById("kotItemsList").innerHTML=currentOrder.map(i=>`<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;font-weight:bold"><span>${i.name}</span><span>QTY: ${i.qty}</span></div>`).join("");
+let note=document.getElementById("orderNote").value.trim();
+document.getElementById("kotNote").textContent=note?"Note: "+note:"";
+doPrint(document.getElementById("hiddenKOT"))
+}
 
-        function filterTag(tag) {
-            if(tag === 'all') renderItems(menuItems);
-            else renderItems(menuItems.filter(i => i.tag === tag));
-        }
+function saveOrder(){
+if(!currentOrder.length)return showToast("ऑर्डर खाली है!",true);
+if(!ordersRef)return showToast("Firebase कनेक्शन नहीं है",true);
+let t=totals(),payload={items:currentOrder.map(i=>({name:i.name,price:Number(i.price),qty:Number(i.qty)})),subtotal:t.sub,discountPercent:t.pct,tax:t.tax,total:t.grand,paymentMode:selectedPayment,note:document.getElementById("orderNote").value.trim(),timestamp:Date.now()};
+ordersRef.push(payload).then(()=>{
+showToast("ऑर्डर Firebase पर सेव हो गया!");currentOrder=[];updateOrderUI();document.getElementById("orderNote").value=""
+}).catch(e=>{console.error(e);showToast("सेव नहीं हुआ: "+(e.message||"Permission जाँचें"),true)})
+}
 
-        function handleSearch() {
-            let q = document.getElementById('searchBox').value.toLowerCase();
-            renderItems(menuItems.filter(i => i.name.toLowerCase().includes(q)));
-        }
+function openSettings(){document.getElementById("settingShopName").value=restaurantName;document.getElementById("settingsModal").classList.add("show-settings")}
+function closeSettings(){document.getElementById("settingsModal").classList.remove("show-settings")}
+function saveSettings(){
+let n=document.getElementById("settingShopName").value.trim();
+if(!n)return showToast("Restaurant name लिखें",true);
+restaurantName=n;localStorage.setItem("rj_shop_name",n);
+document.getElementById("shopNameHeader").textContent=n;showToast("सेटिंग्स सेव हो गई!");closeSettings()
+}
 
-        function addItem(name, price) {
-            let item = currentOrder.find(i => i.name === name);
-            if(item) item.qty += 1;
-            else currentOrder.push({name, price, qty: 1});
-            updateOrderUI();
-        }
-
-        function changeQty(index, delta) {
-            currentOrder[index].qty += delta;
-            if(currentOrder[index].qty <= 0) currentOrder.splice(index, 1);
-            updateOrderUI();
-        }
-
-        function removeItem(index) {
-            currentOrder.splice(index, 1);
-            updateOrderUI();
-        }
-
-        function setPaymentMode(mode) {
-            selectedPayment = mode;
-            ['Cash', 'Card', 'Due'].forEach(m => {
-                let btn = document.getElementById('pay-' + m);
-                if(m === mode) {
-                    btn.className = "bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs";
-                } else {
-                    btn.className = "bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs";
-                }
-            });
-        }
-
-        function updateOrderUI() {
-            const list = document.getElementById('orderList');
-            if(currentOrder.length === 0) {
-                list.innerHTML = '<p class="text-gray-500 text-center py-4">No items added yet.</p>';
-                subTotal.innerText = '₹0'; taxAmount.innerText = '₹0'; grandTotal.innerText = '₹0';
-                return;
-            }
-            let sub = 0;
-            list.innerHTML = currentOrder.map((item, idx) => {
-                let total = item.price * item.qty;
-                sub += total;
-                return `
-                    <div class="flex justify-between items-center bg-gray-800 p-1.5 rounded text-xs">
-                        <div class="flex items-center gap-1">
-                            <button type="button" onclick="removeItem(${idx})" class="text-red-400 font-bold px-1.5">✕</button>
-                            <span class="text-gray-200 truncate w-24">${item.name}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="flex items-center bg-gray-700 rounded px-1">
-                                <button type="button" onclick="changeQty(${idx}, -1)" class="text-red-300 font-bold px-1.5">-</button>
-                                <span class="font-bold px-1.5">${item.qty}</span>
-                                <button type="button" onclick="changeQty(${idx}, 1)" class="text-emerald-300 font-bold px-1.5">+</button>
-                            </div>
-                            <span class="w-8 text-right text-gray-300">₹${item.price}</span>
-                            <span class="w-10 text-right text-amber-400 font-bold">₹${total}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            let discountPercent = parseFloat(document.getElementById('discountInput').value) || 0;
-            let discountAmount = (sub * discountPercent) / 100;
-            let taxable = sub - discountAmount;
-            let tax = Math.round(taxable * 0.05);
-            let grand = taxable + tax;
-
-            subTotal.innerText = '₹' + sub;
-            taxAmount.innerText = '₹' + tax;
-            grandTotal.innerText = '₹' + Math.round(grand);
-        }
-
-        // Print Customer Bill
-        function printCustomerBill() {
-            if(currentOrder.length === 0) {
-                showToast('ऑर्डर खाली है!', true);
-                return;
-            }
-            let receiptHTML = '';
-            let sub = 0;
-            currentOrder.forEach(item => {
-                let total = item.price * item.qty;
-                sub += total;
-                receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                    <span>${item.name} (x${item.qty})</span>
-                    <span>₹${total}</span>
-                </div>`;
-            });
-
-            let discountPercent = parseFloat(document.getElementById('discountInput').value) || 0;
-            let discountAmount = (sub * discountPercent) / 100;
-            let taxable = sub - discountAmount;
-            let tax = Math.round(taxable * 0.05);
-            let grand = Math.round(taxable + tax);
-
-            document.getElementById('receiptShopName').innerText = restaurantName;
-            document.getElementById('receiptItemsList').innerHTML = receiptHTML;
-            document.getElementById('receiptTotals').innerHTML = `
-                <div style="display:flex; justify-content:space-between;"><span>Sub Total:</span><span>₹${sub}</span></div>
-                ${discountPercent > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Discount (${discountPercent}%):</span><span>-₹${Math.round(discountAmount)}</span></div>` : ''}
-                <div style="display:flex; justify-content:space-between;"><span>GST (5%):</span><span>₹${tax}</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:4px; border-top:1px solid black; padding-top:4px;"><span>Grand Total:</span><span>₹${grand}</span></div>
-                <div style="font-size:10px; margin-top:4px;">Payment: ${selectedPayment}</div>
-            `;
-
-            const receiptEl = document.getElementById('hiddenReceipt');
-            receiptEl.classList.add('printing');
-            window.print();
-            receiptEl.classList.remove('printing');
-        }
-
-        // Print Kitchen Order Ticket (KOT)
-        function printKOT() {
-            if(currentOrder.length === 0) {
-                showToast('ऑर्डर खाली है!', true);
-                return;
-            }
-            let kotHTML = '';
-            currentOrder.forEach(item => {
-                kotHTML += `<div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; font-weight:bold;">
-                    <span>🍽️ ${item.name}</span>
-                    <span>QTY: ${item.qty}</span>
-                </div>`;
-            });
-
-            let noteText = document.getElementById('orderNote').value;
-            document.getElementById('kotTime').innerText = new Date().toLocaleTimeString();
-            document.getElementById('kotItemsList').innerHTML = kotHTML;
-            document.getElementById('kotNote').innerText = noteText ? "Note: " + noteText : "";
-
-            const kotEl = document.getElementById('hiddenKOT');
-            kotEl.classList.add('printing');
-            window.print();
-            kotEl.classList.remove('printing');
-        }
-
-        // Save Order to Firebase Database safely
-        function saveOrder() {
-            if(currentOrder.length === 0) { 
-                showToast('ऑर्डर खाली है!', true); 
-                return; 
-            }
-            let grandTotal = document.getElementById('grandTotal').innerText;
-            
-            // Clean plain JS object array for Firebase
-            let cleanOrder = currentOrder.map(i => ({
-                name: i.name,
-                price: Number(i.price),
-                qty: Number(i.qty)
-            }));
-
-            ordersRef.push({
-                items: cleanOrder,
-                total: grandTotal,
-                paymentMode: selectedPayment,
-                timestamp: Date.now()
-            }, (err) => {
-                if(!err) {
-                    showToast('ऑर्डर Firebase पर सेव हो गया!');
-                    currentOrder = [];
-                    updateOrderUI();
-                    document.getElementById('orderNote').value = '';
-                } else {
-                    showToast('सेव करने में त्रुटि!', true);
-                }
-            });
-        }
-
-        // Settings Modal Controls
-        function openSettings() {
-            document.getElementById('settingShopName').value = restaurantName;
-            document.getElementById('settingsModal').classList.remove('hidden');
-        }
-
-        function closeSettings() {
-            document.getElementById('settingsModal').classList.add('hidden');
-        }
-
-        function saveSettings() {
-            let newName = document.getElementById('settingShopName').value.trim();
-            if(newName) {
-                restaurantName = newName;
-                localStorage.setItem('rj_shop_name', restaurantName);
-                document.getElementById('shopNameHeader').innerText = restaurantName;
-                showToast('सेटिंग्स सेव हो गई!');
-            }
-            closeSettings();
-        }
-
-        renderItems(menuItems);
-    </script>
+function showReports(){
+if(!ordersRef)return showToast("Firebase कनेक्शन नहीं है",true);
+ordersRef.once("value").then(s=>{
+let arr=Object.values(s.val()||{}),today=new Date().toDateString(),daily=0,total=0;
+arr.forEach(o=>{let v=Number(o.total)||0;total+=v;if(new Date(o.timestamp||0).toDateString()===today)daily+=v});
+alert("आज की Sale: ₹"+daily+"\nTotal Sale: ₹"+total+"\nTotal Kharcha: अभी expense entry नहीं है")
+}).catch(e=>showToast("Report नहीं खुली: "+e.message,true))
+}
+renderItems(menuItems);updateOrderUI();
+</script>
 </body>
 </html>
