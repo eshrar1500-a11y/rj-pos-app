@@ -130,7 +130,7 @@
             </div>
 
             <!-- Calculation & Action Buttons -->
-            <div class="border-t border-gray-800 pt-2 space-y-1.5 shrink-0">
+            <div class="border-t border-gray-800 pt-2 space-y-1.5 shrink-0 pb-8">
                 <div class="flex justify-between text-gray-400 text-xs">
                     <span>Sub Total</span>
                     <span id="subTotal" class="text-white font-semibold">₹0</span>
@@ -150,16 +150,16 @@
 
                 <!-- Payment Method Buttons -->
                 <div class="grid grid-cols-3 gap-1 pt-1">
-                    <button onclick="setPaymentMode('Cash')" id="pay-Cash" class="bg-emerald-600 text-white py-1 rounded font-bold border border-emerald-500 text-center text-[11px]">💵 Cash</button>
-                    <button onclick="setPaymentMode('Card')" id="pay-Card" class="bg-gray-800 text-gray-300 py-1 rounded font-bold border border-gray-700 text-center text-[11px]">💳 Card</button>
-                    <button onclick="setPaymentMode('Due')" id="pay-Due" class="bg-gray-800 text-gray-300 py-1 rounded font-bold border border-gray-700 text-center text-[11px]">👤 Due</button>
+                    <button onclick="setPaymentMode('Cash')" id="pay-Cash" class="bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs">💵 Cash</button>
+                    <button onclick="setPaymentMode('Card')" id="pay-Card" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">💳 Card</button>
+                    <button onclick="setPaymentMode('Due')" id="pay-Due" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">👤 Due</button>
                 </div>
 
                 <!-- Bottom Action Buttons -->
                 <div class="grid grid-cols-3 gap-1 pt-1">
-                    <button onclick="saveOrder()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded font-bold shadow">SAVE</button>
-                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded font-bold shadow">PRINT</button>
-                    <button onclick="clearOrder()" class="bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded font-bold shadow">KOT</button>
+                    <button onclick="saveOrder()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded font-bold shadow text-sm">SAVE</button>
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold shadow text-sm">PRINT</button>
+                    <button onclick="clearOrder()" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded font-bold shadow text-sm">KOT</button>
                 </div>
             </div>
         </div>
@@ -219,7 +219,7 @@
                         <p class="font-semibold text-white">${i.name}</p>
                         <p class="text-amber-400 font-bold">₹${i.price}</p>
                     </div>
-                    <button onclick="addItem('${i.name}', ${i.price})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded font-bold text-[11px]">ADD</button>
+                    <button onclick="addItem('${i.name}', ${i.price})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold text-xs">ADD</button>
                 </div>
             `).join('');
         }
@@ -262,9 +262,9 @@
             ['Cash', 'Card', 'Due'].forEach(m => {
                 let btn = document.getElementById('pay-' + m);
                 if(m === mode) {
-                    btn.className = "bg-emerald-600 text-white py-1 rounded font-bold border border-emerald-500 text-center text-[11px]";
+                    btn.className = "bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs";
                 } else {
-                    btn.className = "bg-gray-800 text-gray-300 py-1 rounded font-bold border border-gray-700 text-center text-[11px]";
+                    btn.className = "bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs";
                 }
             });
         }
@@ -281,16 +281,16 @@
                 let total = item.price * item.qty;
                 sub += total;
                 return `
-                    <div class="flex justify-between items-center bg-gray-800 p-1.5 rounded text-[11px]">
+                    <div class="flex justify-between items-center bg-gray-800 p-1.5 rounded text-xs">
                         <div class="flex items-center gap-1">
-                            <button onclick="removeItem(${idx})" class="text-red-400 font-bold px-1">✕</button>
+                            <button onclick="removeItem(${idx})" class="text-red-400 font-bold px-1.5">✕</button>
                             <span class="text-gray-200 truncate w-24">${item.name}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="flex items-center bg-gray-700 rounded px-1">
-                                <button onclick="changeQty(${idx}, -1)" class="text-red-300 font-bold px-1">-</button>
-                                <span class="font-bold px-1">${item.qty}</span>
-                                <button onclick="changeQty(${idx}, 1)" class="text-emerald-300 font-bold px-1">+</button>
+                                <button onclick="changeQty(${idx}, -1)" class="text-red-300 font-bold px-1.5">-</button>
+                                <span class="font-bold px-1.5">${item.qty}</span>
+                                <button onclick="changeQty(${idx}, 1)" class="text-emerald-300 font-bold px-1.5">+</button>
                             </div>
                             <span class="w-8 text-right text-gray-300">₹${item.price}</span>
                             <span class="w-10 text-right text-amber-400 font-bold">₹${total}</span>
