@@ -358,7 +358,7 @@
             grandTotal.innerText = '₹' + Math.round(grand);
         }
 
-        // Print Customer Bill (Only Bill & auto hide after print)
+        // Print Customer Bill
         function printCustomerBill() {
             if(currentOrder.length === 0) {
                 showToast('ऑर्डर खाली है!', true);
@@ -397,7 +397,7 @@
             receiptEl.classList.remove('printing');
         }
 
-        // Print Kitchen Order Ticket (KOT & auto hide after print)
+        // Print Kitchen Order Ticket (KOT)
         function printKOT() {
             if(currentOrder.length === 0) {
                 showToast('ऑर्डर खाली है!', true);
