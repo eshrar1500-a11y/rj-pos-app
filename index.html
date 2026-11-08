@@ -211,7 +211,7 @@
     </footer>
 
     <script>
-        // Firebase Web Setup (Correct Config for Web/GitHub Pages)
+        // Firebase Web Setup
         const firebaseConfig = {
             apiKey: "AIzaSyDM06RpXjspQnYx5uD_JKwnkQDvffJMRy4",
             databaseURL: "https://rj-billing-app-default-rtdb.firebaseio.com/",
@@ -405,8 +405,8 @@
             }
             let kotHTML = '';
             currentOrder.forEach(item => {
-                kotHTML += `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; font-weight:bold;">
-                    <span>${item.name}</span>
+                kotHTML += `<div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; font-weight:bold;">
+                    <span>🍽️ ${item.name}</span>
                     <span>QTY: ${item.qty}</span>
                 </div>`;
             });
@@ -422,14 +422,23 @@
             kotEl.classList.remove('printing');
         }
 
+        // Save Order to Firebase Database safely
         function saveOrder() {
             if(currentOrder.length === 0) { 
                 showToast('ऑर्डर खाली है!', true); 
                 return; 
             }
             let grandTotal = document.getElementById('grandTotal').innerText;
+            
+            // Clean plain JS object array for Firebase
+            let cleanOrder = currentOrder.map(i => ({
+                name: i.name,
+                price: Number(i.price),
+                qty: Number(i.qty)
+            }));
+
             ordersRef.push({
-                items: currentOrder,
+                items: cleanOrder,
                 total: grandTotal,
                 paymentMode: selectedPayment,
                 timestamp: Date.now()
