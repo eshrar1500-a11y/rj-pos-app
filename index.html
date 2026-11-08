@@ -16,8 +16,9 @@
 
         @media print {
             body * { display: none !important; }
-            #hiddenReceipt, #hiddenReceipt *, #hiddenKOT, #hiddenKOT * { display: block !important; }
-            #hiddenReceipt, #hiddenKOT {
+            #hiddenReceipt.printing, #hiddenReceipt.printing * { display: block !important; }
+            #hiddenKOT.printing, #hiddenKOT.printing * { display: block !important; }
+            #hiddenReceipt.printing, #hiddenKOT.printing {
                 position: absolute;
                 left: 0;
                 top: 0;
@@ -43,7 +44,7 @@
         </div>
         <div class="flex items-center gap-3 text-gray-300 text-sm">
             <span>🔔</span>
-            <span onclick="openSettings()" class="cursor-pointer">⚙️</span>
+            <span onclick="openSettings()" class="cursor-pointer text-base p-1">⚙️</span>
         </div>
     </header>
 
@@ -165,7 +166,7 @@
         </div>
     </div>
 
-    <!-- Hidden Customer Bill Receipt (For Print) -->
+    <!-- Hidden Customer Bill Receipt -->
     <div id="hiddenReceipt">
         <h2 id="receiptShopName" style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">RJ RESTAURANT</h2>
         <p style="text-align:center; font-size:11px; margin-bottom:8px;">CUSTOMER BILL</p>
@@ -177,7 +178,7 @@
         <p style="text-align:center; font-size:10px; margin-top:12px;">Thank You! Visit Again.</p>
     </div>
 
-    <!-- Hidden KOT Receipt (For Kitchen Print) -->
+    <!-- Hidden KOT Receipt -->
     <div id="hiddenKOT">
         <h2 style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">KITCHEN ORDER TICKET (KOT)</h2>
         <div style="font-size:11px; margin-bottom:5px;">Table: T3 | Time: <span id="kotTime"></span></div>
@@ -202,7 +203,7 @@
     </div>
 
     <!-- Bottom Navigation Bar -->
-    <footer class="bg-gray-900 border-t border-gray-800 grid grid-cols-4 text-center py-1.5 shrink-0 text-[10px] font-medium">
+    <footer class="bg-gray-900 border-t border-gray-800 grid grid-cols-4 text-center py-1.5 shrink-0 text-[10px] font-medium pb-5">
         <button type="button" class="text-red-500 flex flex-col items-center gap-0.5 p-1"><span>🛒</span> New Order</button>
         <button type="button" onclick="showToast('Running Tables feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>🪑</span> Tables</button>
         <button type="button" onclick="showToast('Reports feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>📊</span> Reports</button>
@@ -357,7 +358,7 @@
             grandTotal.innerText = '₹' + Math.round(grand);
         }
 
-        // Print Customer Bill (Only Bill)
+        // Print Customer Bill (Only Bill & auto hide after print)
         function printCustomerBill() {
             if(currentOrder.length === 0) {
                 showToast('ऑर्डर खाली है!', true);
@@ -390,13 +391,13 @@
                 <div style="font-size:10px; margin-top:4px;">Payment: ${selectedPayment}</div>
             `;
 
-            // Temporarily hide KOT and show Receipt for printing
-            document.getElementById('hiddenKOT').style.display = 'none';
-            document.getElementById('hiddenReceipt').style.display = 'block';
+            const receiptEl = document.getElementById('hiddenReceipt');
+            receiptEl.classList.add('printing');
             window.print();
+            receiptEl.classList.remove('printing');
         }
 
-        // Print Kitchen Order Ticket (KOT)
+        // Print Kitchen Order Ticket (KOT & auto hide after print)
         function printKOT() {
             if(currentOrder.length === 0) {
                 showToast('ऑर्डर खाली है!', true);
@@ -415,10 +416,10 @@
             document.getElementById('kotItemsList').innerHTML = kotHTML;
             document.getElementById('kotNote').innerText = noteText ? "Note: " + noteText : "";
 
-            // Temporarily hide Receipt and show KOT for printing
-            document.getElementById('hiddenReceipt').style.display = 'none';
-            document.getElementById('hiddenKOT').style.display = 'block';
+            const kotEl = document.getElementById('hiddenKOT');
+            kotEl.classList.add('printing');
             window.print();
+            kotEl.classList.remove('printing');
         }
 
         function saveOrder() {
@@ -442,16 +443,6 @@
                     showToast('सेव करने में त्रुटि!', true);
                 }
             });
-        }
-
-        function clearOrder() {
-            if(currentOrder.length === 0) {
-                showToast('ऑर्डर पहले से खाली है!', true);
-                return;
-            }
-            currentOrder = [];
-            updateOrderUI();
-            showToast('आइटम्स साफ़ कर दिए गए');
         }
 
         // Settings Modal Controls
