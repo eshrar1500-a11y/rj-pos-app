@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RJ Restaurant POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
@@ -187,7 +185,7 @@
         <div id="kotNote" style="font-size:11px; margin-top:8px; font-weight:bold;"></div>
     </div>
 
-    <!-- Settings Modal (Direct Inline Style Control) -->
+    <!-- Settings Modal -->
     <div id="settingsModal" style="display: none;" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
         <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-sm space-y-3">
             <h3 class="font-bold text-base text-amber-400">⚙️ Restaurant Settings</h3>
@@ -210,18 +208,44 @@
         <button type="button" onclick="openSettings()" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>⚙️</span> Settings</button>
     </footer>
 
-    <script>
-        // Firebase Web Setup
+    <!-- Firebase SDK Imports via Module Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyDM06RpXjspQnYx5uD_JKwnkQDvffJMRy4",
             databaseURL: "https://rj-billing-app-default-rtdb.firebaseio.com/",
             projectId: "rj-billing-app",
             storageBucket: "rj-billing-app.firebasestorage.app"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const ordersRef = db.ref('orders/table_T3');
 
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Global functions attachment
+        window.saveOrderToFirebase = function(currentOrder, selectedPayment, grandTotal, callback) {
+            const ordersRef = ref(db, 'orders/table_T3');
+            let cleanOrder = currentOrder.map(i => ({
+                name: i.name,
+                price: Number(i.price),
+                qty: Number(i.qty)
+            }));
+
+            push(ordersRef, {
+                items: cleanOrder,
+                total: grandTotal,
+                paymentMode: selectedPayment,
+                timestamp: Date.now()
+            }).then(() => {
+                callback(null);
+            }).catch((error) => {
+                callback(error);
+            });
+        };
+    </script>
+
+    <script>
         let restaurantName = localStorage.getItem('rj_shop_name') || "RJ Restaurant";
         document.getElementById('shopNameHeader').innerText = restaurantName;
 
@@ -364,7 +388,6 @@
             grandTotalEl.innerText = '₹' + Math.round(grand);
         }
 
-        // Print Customer Bill
         function printCustomerBill() {
             if(currentOrder.length === 0) {
                 showToast('ऑर्डर खाली है!', true);
@@ -403,7 +426,6 @@
             receiptEl.classList.remove('printing');
         }
 
-        // Print Kitchen Order Ticket (KOT)
         function printKOT() {
             if(currentOrder.length === 0) {
                 showToast('ऑर्डर खाली है!', true);
@@ -428,7 +450,6 @@
             kotEl.classList.remove('printing');
         }
 
-        // Save Order to Firebase Database safely
         function saveOrder() {
             if(currentOrder.length === 0) { 
                 showToast('ऑर्डर खाली है!', true); 
@@ -436,30 +457,22 @@
             }
             let grandTotal = document.getElementById('grandTotal').innerText;
             
-            let cleanOrder = currentOrder.map(i => ({
-                name: i.name,
-                price: Number(i.price),
-                qty: Number(i.qty)
-            }));
-
-            ordersRef.push({
-                items: cleanOrder,
-                total: grandTotal,
-                paymentMode: selectedPayment,
-                timestamp: Date.now()
-            }, (err) => {
-                if(!err) {
-                    showToast('ऑर्डर Firebase पर सेव हो गया!');
-                    currentOrder = [];
-                    updateOrderUI();
-                    document.getElementById('orderNote').value = '';
-                } else {
-                    showToast('सेव करने में त्रुटि: ' + err.message, true);
-                }
-            });
+            if(typeof window.saveOrderToFirebase === 'function') {
+                window.saveOrderToFirebase(currentOrder, selectedPayment, grandTotal, (err) => {
+                    if(!err) {
+                        showToast('ऑर्डर Firebase पर सेव हो गया!');
+                        currentOrder = [];
+                        updateOrderUI();
+                        document.getElementById('orderNote').value = '';
+                    } else {
+                        showToast('सेव करने में त्रुटि!', true);
+                    }
+                });
+            } else {
+                showToast('Firebase लोड हो रहा है...', true);
+            }
         }
 
-        // Settings Modal Controls (Inline style toggle)
         function openSettings() {
             document.getElementById('settingShopName').value = restaurantName;
             document.getElementById('settingsModal').style.display = 'flex';
