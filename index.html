@@ -1,16 +1,15 @@
-
 <!doctype html>
 <html lang="hi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>RJ Restaurant POS</title>
+<title>Mister Shawarma POS</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <style>
-body{font-size:12px}
+body{font-size:13px;font-weight:500;}
 button{touch-action:manipulation}
 #receipt,#kot{display:none}
 @media print{
@@ -20,206 +19,217 @@ body *{visibility:hidden!important}
 #receipt.printing,#kot.printing{
 display:block!important;
 position:absolute;top:0;left:0;width:100%;
-padding:12px;background:white;color:black;font:12px monospace
+padding:12px;background:white;color:black;font:13px monospace;font-weight:bold;
 }}
 </style>
 </head>
 
-<body class="bg-gray-950 text-white">
+<body class="bg-gray-950 text-white font-medium">
 
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" class="fixed inset-0 z-[100] bg-gray-950 flex items-center justify-center p-5">
-<div class="bg-gray-900 w-full max-w-sm p-6 rounded-xl border border-gray-700">
-<h1 class="text-2xl text-center font-bold text-amber-400 mb-2">RJ Restaurant POS</h1>
-<p class="text-center text-gray-400 mb-5">Admin Login</p>
+<div class="bg-gray-900 w-full max-w-sm p-6 rounded-xl border border-gray-700 shadow-2xl">
+<h1 class="text-2xl text-center font-black text-amber-400 mb-2">Mister Shawarma POS</h1>
+<p class="text-center text-gray-300 font-bold mb-5 text-sm">Admin Login</p>
 
-<label class="block mb-1">मोबाइल नंबर</label>
+<label class="block mb-1 font-bold text-gray-200">मोबाइल नंबर</label>
 <input id="loginPhone" value="8881544782" readonly
-class="bg-gray-800 p-3 rounded w-full mb-3">
+class="bg-gray-800 p-3 rounded w-full mb-3 text-white font-bold">
 
-<label class="block mb-1">पासवर्ड</label>
+<label class="block mb-1 font-bold text-gray-200">पासवर्ड</label>
 <input id="loginPassword" type="password" placeholder="अपना पासवर्ड डालें"
-class="bg-gray-800 p-3 rounded w-full mb-3">
+class="bg-gray-800 p-3 rounded w-full mb-3 text-white font-bold">
 
 <button onclick="loginAdmin()" id="loginButton"
-class="bg-emerald-600 p-3 rounded w-full font-bold">LOGIN</button>
+class="bg-emerald-600 p-3 rounded w-full font-bold text-sm shadow">LOGIN</button>
 
-<p id="loginMessage" class="text-center mt-3 text-red-400"></p>
+<p id="loginMessage" class="text-center mt-3 text-red-400 font-bold text-xs"></p>
 </div>
 </div>
 
 <!-- MAIN APP -->
 <div id="appShell" class="hidden h-screen flex flex-col overflow-hidden">
 
-<header class="bg-gray-900 border-b border-gray-800 p-3 flex justify-between">
+<header class="bg-gray-900 border-b border-gray-800 p-3 flex justify-between items-center">
 <div>
-<button onclick="drawer()">☰</button>
-<b class="bg-white text-black px-2 rounded">RJ</b>
-<span id="shopHead">RJ Restaurant POS</span>
+<button onclick="drawer()" class="text-lg font-bold px-1">☰</button>
+<b class="bg-amber-400 text-black px-2 py-0.5 rounded text-sm font-black">MS</b>
+<span id="shopHead" class="font-bold text-sm">Mister Shawarma</span>
 </div>
 <div class="flex items-center gap-2">
-<button id="gstButton" onclick="toggleGST()" class="bg-red-600 px-2 py-2 rounded">GST OFF</button>
-<button onclick="settingsOpen()">⚙️ Settings</button>
+<button id="gstButton" onclick="toggleGST()" class="bg-red-600 px-2 py-1.5 rounded font-bold text-xs">GST OFF</button>
+<button onclick="settingsOpen()" class="font-bold text-xs bg-gray-800 px-2.5 py-1.5 rounded border border-gray-700">⚙️ Settings</button>
 </div>
 </header>
 
 <div id="drawerBox" class="hidden fixed inset-0 z-40 bg-black/70" onclick="this.classList.add('hidden')">
-<div class="bg-gray-900 w-64 h-full p-4 space-y-3" onclick="event.stopPropagation()">
-<button class="block" onclick="go('pos')">🛒 New Order</button>
-<button class="block" onclick="menuOpen()">✏️ Edit Menu</button>
-<button class="block" onclick="go('dashboard')">📊 Dashboard</button>
-<button class="block" onclick="go('reports')">📈 Reports</button>
-<button class="block" onclick="settingsOpen()">⚙️ Settings</button>
+<div class="bg-gray-900 w-64 h-full p-4 space-y-3 font-bold text-sm" onclick="event.stopPropagation()">
+<button class="block w-full text-left py-1" onclick="go('pos')">🛒 New Order</button>
+<button class="block w-full text-left py-1" onclick="menuOpen()">✏️ Edit Menu</button>
+<button class="block w-full text-left py-1" onclick="go('dashboard')">📊 Dashboard</button>
+<button class="block w-full text-left py-1" onclick="go('reports')">📈 Reports</button>
+<button class="block w-full text-left py-1" onclick="settingsOpen()">⚙️ Settings</button>
 <hr class="border-gray-700">
-<button class="block text-red-400" onclick="logoutAdmin()">🚪 Logout</button>
+<button class="block w-full text-left py-1 text-red-400 font-black" onclick="logoutAdmin()">🚪 Logout</button>
 </div>
 </div>
 
 <main class="flex-1 min-h-0 flex flex-col">
 
 <div id="pos" class="flex-1 min-h-0 flex flex-col">
-<div class="grid grid-cols-2 bg-gray-900 p-1">
-<button id="newTab" class="bg-red-600 p-2 rounded" onclick="tab('new')">New Order</button>
-<button id="billTab" class="p-2" onclick="tab('billing')">Billing / Saved Bills</button>
+<div class="grid grid-cols-2 bg-gray-900 p-1 font-bold text-xs">
+<button id="newTab" class="bg-red-600 p-2 rounded shadow" onclick="tab('new')">New Order</button>
+<button id="billTab" class="p-2 text-gray-300" onclick="tab('billing')">Billing / Saved Bills</button>
 </div>
 
 <div id="newPanel" class="flex-1 min-h-0 grid md:grid-cols-2 gap-2 p-2 overflow-auto">
 
-<section class="bg-gray-900 rounded p-2 flex flex-col min-h-0">
-<input id="search" placeholder="🔍 Search item..." class="bg-gray-800 p-2 rounded mb-2" oninput="renderMenu()">
-<div class="flex gap-1 flex-wrap mb-2">
-<button class="bg-gray-700 p-1 rounded" onclick="category='all';renderMenu()">All</button>
-<button class="bg-gray-700 p-1 rounded" onclick="category='Veg';renderMenu()">Veg</button>
-<button class="bg-gray-700 p-1 rounded" onclick="category='Non-Veg';renderMenu()">Non-Veg</button>
+<section class="bg-gray-900 rounded p-2.5 flex flex-col min-h-0">
+<input id="search" placeholder="🔍 Search item..." class="bg-gray-800 p-2.5 rounded mb-2 text-white font-bold text-xs outline-none" oninput="renderMenu()">
+<div class="flex gap-1.5 flex-wrap mb-2 font-bold text-xs">
+<button class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded text-white" onclick="category='all';renderMenu()">All</button>
+<button class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded text-white" onclick="category='Shawarmas';renderMenu()">Shawarmas</button>
+<button class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded text-white" onclick="category='Salads';renderMenu()">Salads</button>
+<button class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded text-white" onclick="category='Open Shawarmas';renderMenu()">Open Shawarmas</button>
 </div>
 <div id="menuList" class="overflow-auto space-y-2"></div>
 </section>
 
-<section class="bg-gray-900 rounded p-2 flex flex-col min-h-0">
-<div class="flex justify-between mb-2">
-<b>Token <span id="token">#1</span></b>
-<span>👥 2 persons</span>
+<section class="bg-gray-900 rounded p-2.5 flex flex-col min-h-0">
+<div class="flex justify-between mb-2 font-bold text-xs">
+<span class="text-gray-300">Token <b id="token" class="text-amber-400 text-sm">#1</b></span>
+<span class="text-gray-300">👥 2 persons</span>
 </div>
 
-<div id="cart" class="space-y-2 overflow-auto flex-1"></div>
-<input id="note" class="bg-gray-800 p-2 rounded my-2" placeholder="Note / Special instruction">
+<div id="cart" class="space-y-2 overflow-auto flex-1 font-bold"></div>
+<input id="note" class="bg-gray-800 p-2.5 rounded my-2 text-white font-bold text-xs outline-none" placeholder="Note / Special instruction">
 
-<div class="space-y-1 border-t border-gray-700 pt-2">
-<div class="flex justify-between"><span>Subtotal</span><b id="subtotal">₹0</b></div>
-<div class="flex justify-between items-center">
+<div class="space-y-1.5 border-t border-gray-700 pt-2 font-bold text-xs">
+<div class="flex justify-between text-gray-300"><span>Subtotal</span><b id="subtotal" class="text-white">₹0</b></div>
+<div class="flex justify-between items-center text-gray-300">
 <span>Discount (%)</span>
 <input id="discount" type="number" value="0" min="0" max="100"
-class="w-16 bg-gray-800 p-1 text-right" oninput="totals()">
+class="w-16 bg-gray-800 p-1 text-right text-white font-bold rounded" oninput="totals()">
 </div>
-<div class="flex justify-between">
-<span id="taxLabel">GST OFF</span><b id="tax">₹0</b>
+<div class="flex justify-between text-gray-300">
+<span id="taxLabel">GST OFF</span><b id="tax" class="text-white">₹0</b>
 </div>
-<div class="flex justify-between bg-gray-800 p-2 rounded text-base">
-<b>Total</b><b id="grand" class="text-amber-400">₹0</b>
+<div class="flex justify-between bg-gray-800 p-2.5 rounded text-sm border border-gray-700">
+<span class="text-gray-200">Total</span><b id="grand" class="text-amber-400 text-base font-black">₹0</b>
 </div>
-</div>
-
-<div class="grid grid-cols-3 gap-1 my-2">
-<button id="cash" onclick="pay='Cash';payStyle()" class="bg-emerald-600 p-2 rounded">Cash</button>
-<button id="card" onclick="pay='Card';payStyle()" class="bg-gray-700 p-2 rounded">Card</button>
-<button id="due" onclick="pay='Due';payStyle()" class="bg-gray-700 p-2 rounded">Due</button>
 </div>
 
-<div class="grid grid-cols-3 gap-1">
-<button id="saveBtn" onclick="saveBill()" class="bg-emerald-600 p-3 rounded font-bold">SAVE</button>
-<button onclick="printBill()" class="bg-blue-600 p-3 rounded font-bold">PRINT</button>
-<button onclick="printKot()" class="bg-amber-600 p-3 rounded font-bold">KOT</button>
+<div class="grid grid-cols-3 gap-1.5 my-2 font-bold text-xs">
+<button id="cash" onclick="pay='Cash';payStyle()" class="bg-emerald-600 p-2.5 rounded shadow">Cash</button>
+<button id="card" onclick="pay='Card';payStyle()" class="bg-gray-800 border border-gray-700 p-2.5 rounded text-gray-300 shadow">Card</button>
+<button id="due" onclick="pay='Due';payStyle()" class="bg-gray-800 border border-gray-700 p-2.5 rounded text-gray-300 shadow">Due</button>
 </div>
-<p id="status" class="text-center mt-2 min-h-4"></p>
+
+<div class="grid grid-cols-3 gap-1.5 font-bold text-xs">
+<button id="saveBtn" onclick="saveBill()" class="bg-emerald-600 p-3 rounded font-black shadow">SAVE</button>
+<button onclick="printBill()" class="bg-blue-600 p-3 rounded font-black shadow">PRINT</button>
+<button onclick="printKot()" class="bg-amber-600 p-3 rounded font-black shadow">KOT</button>
+</div>
+<p id="status" class="text-center mt-2 min-h-4 font-bold text-xs"></p>
 </section>
 </div>
 
 <div id="billingPanel" class="hidden p-3 overflow-auto">
-<button onclick="historyLoad()" class="bg-blue-600 p-2 rounded mb-3">Refresh Bills</button>
-<div id="history" class="space-y-2"></div>
+<button onclick="historyLoad()" class="bg-blue-600 p-2.5 rounded mb-3 font-bold text-xs shadow">Refresh Bills</button>
+<div id="history" class="space-y-2 font-bold"></div>
 </div>
 </div>
 
-<div id="dashboard" class="hidden p-4">
-<h2 class="text-lg text-amber-400">Dashboard</h2>
-<p id="dash"></p>
-<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
+<div id="dashboard" class="hidden p-4 font-bold">
+<h2 class="text-base text-amber-400 font-black mb-2">Dashboard</h2>
+<p id="dash" class="text-sm text-gray-200"></p>
+<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3 text-xs font-bold shadow">Back</button>
 </div>
 
-<div id="reports" class="hidden p-4">
-<h2 class="text-lg text-amber-400">Sale Reports</h2>
-<div id="report"></div>
-<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
+<div id="reports" class="hidden p-4 font-bold">
+<h2 class="text-base text-amber-400 font-black mb-2">Sale Reports</h2>
+<div id="report" class="text-sm text-gray-200"></div>
+<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3 text-xs font-bold shadow">Back</button>
 </div>
 
-<div id="tables" class="hidden p-4">
-<h2 class="text-lg text-amber-400">Running Tables</h2>
-<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
+<div id="tables" class="hidden p-4 font-bold">
+<h2 class="text-base text-amber-400 font-black mb-2">Running Tables</h2>
+<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3 text-xs font-bold shadow">Back</button>
 </div>
 
 </main>
 
-<footer class="bg-gray-900 grid grid-cols-4 text-center p-2">
-<button onclick="go('pos')">🛒 Order</button>
-<button onclick="go('tables')">🪑 Tables</button>
-<button onclick="go('reports')">📊 Reports</button>
-<button onclick="settingsOpen()">⚙️ Settings</button>
+<footer class="bg-gray-900 grid grid-cols-4 text-center p-2 font-bold text-xs border-t border-gray-800">
+<button onclick="go('pos')" class="text-red-500">🛒 Order</button>
+<button onclick="go('tables')" class="text-gray-300">🪑 Tables</button>
+<button onclick="go('reports')" class="text-gray-300">📊 Reports</button>
+<button onclick="settingsOpen()" class="text-gray-300">⚙️ Settings</button>
 </footer>
 
 <div id="settings" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-<div class="bg-gray-900 p-4 rounded w-full max-w-sm max-h-[90vh] overflow-auto">
-<h3 class="text-amber-400 font-bold mb-3">⚙️ Restaurant Settings</h3>
-<label class="block mb-1">Shop Name</label>
-<input id="shopName" class="bg-gray-800 p-2 w-full rounded mb-3">
+<div class="bg-gray-900 p-5 rounded-xl w-full max-w-sm max-h-[90vh] overflow-auto font-bold text-xs border border-gray-700 shadow-2xl space-y-3">
+<h3 class="text-amber-400 font-black text-base mb-1">⚙️ Restaurant Settings</h3>
+<label class="block mb-1 text-gray-300">Shop Name</label>
+<input id="shopName" class="bg-gray-800 p-2.5 w-full rounded text-white font-bold outline-none border border-gray-700">
 
-<label class="flex items-center gap-2 mb-3">
-<input id="gstEnabled" type="checkbox" onchange="settingsTaxPreview()">
+<label class="block mb-1 text-gray-300">Mobile Number</label>
+<input id="shopPhone" class="bg-gray-800 p-2.5 w-full rounded text-white font-bold outline-none border border-gray-700" placeholder="दुकान का फोन नंबर">
+
+<label class="flex items-center gap-2 mb-2 text-gray-200 pt-1">
+<input id="gstEnabled" type="checkbox" onchange="settingsTaxPreview()" class="w-4 h-4">
 GST चालू करें
 </label>
 
-<label class="block mb-1">GST प्रतिशत (%)</label>
+<label class="block mb-1 text-gray-300">GST प्रतिशत (%)</label>
 <input id="gstRate" type="number" min="0" max="100" value="5"
-class="bg-gray-800 p-2 w-full rounded mb-3">
+class="bg-gray-800 p-2.5 w-full rounded text-white font-bold outline-none border border-gray-700">
 
-<label class="block mb-1">GST नंबर (GSTIN)</label>
-<input id="gstNumber" class="bg-gray-800 p-2 w-full rounded mb-3" placeholder="GST नंबर मिलने पर डालें">
+<label class="block mb-1 text-gray-300">GST नंबर (GSTIN)</label>
+<input id="gstNumber" class="bg-gray-800 p-2.5 w-full rounded text-white font-bold outline-none border border-gray-700 uppercase" placeholder="GST नंबर">
 
-<p class="text-gray-400 mb-3">GST अभी OFF रखें। नंबर बाद में डाल सकते हैं।</p>
-
-<div class="flex justify-end gap-2">
-<button onclick="settingsClose()" class="bg-gray-700 p-2 rounded">Cancel</button>
-<button onclick="settingsSave()" class="bg-emerald-600 p-2 rounded">Save Settings</button>
+<div class="flex justify-end gap-2 pt-2 border-t border-gray-800">
+<button onclick="settingsClose()" class="bg-gray-700 px-4 py-2 rounded text-white font-bold">Cancel</button>
+<button onclick="settingsSave()" class="bg-emerald-600 px-4 py-2 rounded text-white font-bold shadow">Save Settings</button>
 </div>
 </div>
 </div>
 
 <div id="menuModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3">
-<div class="bg-gray-900 p-3 rounded w-full max-w-md max-h-[90vh] flex flex-col">
-<h3 class="text-amber-400 font-bold mb-2">Edit Menu</h3>
-<div class="flex gap-1">
-<input id="newName" placeholder="Item name" class="bg-gray-800 p-2 rounded flex-1">
-<input id="newPrice" type="number" placeholder="₹" class="bg-gray-800 p-2 rounded w-20">
-<button onclick="menuAdd()" class="bg-emerald-600 p-2 rounded">Add</button>
+<div class="bg-gray-900 p-4 rounded-xl w-full max-w-md max-h-[90vh] flex flex-col font-bold text-xs border border-gray-700 shadow-2xl">
+<h3 class="text-amber-400 font-black text-sm mb-2">Edit Menu</h3>
+<div class="flex gap-1.5 mb-2">
+<input id="newName" placeholder="Item name" class="bg-gray-800 p-2.5 rounded flex-1 text-white font-bold outline-none border border-gray-700">
+<input id="newPrice" type="number" placeholder="₹" class="bg-gray-800 p-2.5 rounded w-20 text-white font-bold outline-none border border-gray-700">
 </div>
-<div id="editMenu" class="overflow-auto flex-1 space-y-2 my-2"></div>
-<button onclick="menuClose()" class="bg-red-600 p-2 rounded">Close</button>
+<div class="flex gap-1.5 mb-3">
+<select id="newTag" class="bg-gray-800 p-2.5 rounded flex-1 text-white font-bold outline-none border border-gray-700">
+<option value="Shawarmas">Shawarmas</option>
+<option value="Salads">Salads</option>
+<option value="Open Shawarmas">Open Shawarmas</option>
+</select>
+<button onclick="menuAdd()" class="bg-emerald-600 p-2.5 rounded px-5 text-white font-black shadow">Add</button>
+</div>
+<div id="editMenu" class="overflow-auto flex-1 space-y-2 my-1"></div>
+<button onclick="menuClose()" class="bg-red-600 p-2.5 rounded text-white font-black mt-2 shadow">Close</button>
 </div>
 </div>
 
 <div id="receipt">
 <h2 id="rShop" style="text-align:center;font-weight:bold;font-size:16px"></h2>
-<p style="text-align:center">CUSTOMER BILL</p>
+<p id="rGst" style="text-align:center;font-size:11px;font-weight:bold"></p>
+<p id="rPhone" style="text-align:center;font-size:11px;font-weight:bold;margin-bottom:4px"></p>
+<p style="text-align:center;font-weight:bold">CUSTOMER BILL</p>
 <p>Token: <span id="rToken"></span></p><hr>
 <div id="rItems"></div><hr>
 <div id="rTotals"></div>
-<p style="text-align:center;margin-top:12px">Thank You! Visit Again.</p>
+<p style="text-align:center;margin-top:12px;font-weight:bold">Thank You! Visit Again.</p>
 </div>
 
 <div id="kot">
 <h2 style="text-align:center;font-weight:bold">KITCHEN ORDER TICKET</h2>
 <p>Token <span id="kToken"></span> | <span id="kTime"></span></p><hr>
 <div id="kItems"></div>
-<p id="kNote"></p>
+<p id="kNote" style="font-weight:bold"></p>
 </div>
 
 </div><!-- END MAIN APP -->
@@ -304,7 +314,8 @@ if(user)auth.signOut();
 }
 
 /* APP DATA */
-let shop=localStorage.getItem('rj_shop_name')||'RJ Restaurant';
+let shop=localStorage.getItem('rj_shop_name')||'Mister Shawarma';
+let shopPhone=localStorage.getItem('rj_shop_phone')||'';
 let token=+(localStorage.getItem('rj_token_no')||1);
 let pay='Cash',cart=[],category='all',ordersCache={};
 
@@ -313,23 +324,38 @@ let gstRate=Number(localStorage.getItem('rj_gst_rate')||5);
 let gstNumber=localStorage.getItem('rj_gst_number')||'';
 
 const defaultItems=[
-['Chicken Shawarma',100,'Non-Veg'],
-['Margherita Pizza',180,'Veg'],
-['Veg Burger',120,'Veg'],
-['Cold Coffee',80,'Beverages'],
-['French Fries',60,'Veg'],
-['Paneer Pizza',200,'Veg'],
-['Chicken Biryani',160,'Non-Veg'],
-['Veg Pasta',140,'Veg'],
-['Chicken Roll',100,'Non-Veg'],
-['Masala Dosa',90,'Veg'],
-['Ice Cream',70,'Veg'],
-['Tomato Soup',60,'Veg'],
-['Veg Sandwich',80,'Veg'],
-['Chocolate Shake',90,'Beverages'],
-['Mango Shake',80,'Beverages'],
-['Oreo Shake',100,'Beverages'],
-['Hot Coffee',60,'Beverages']
+// SHAWARMAS
+['CLASSIC CHICKEN SHAWARMA',60,'Shawarmas'],
+['PIRI PIRI CHICKEN SHAWARMA',70,'Shawarmas'],
+['ACHARI CHICKEN SHAWARMA',70,'Shawarmas'],
+['FIERY CHICKEN SHAWARMA',70,'Shawarmas'],
+['CHILLI MILLI CHICKEN SHAWARMA',70,'Shawarmas'],
+['BBQ CHICKEN SHAWARMA',80,'Shawarmas'],
+['CHICKEN TIKKA SHAWARMA',90,'Shawarmas'],
+['FIRANGI CHICKEN SHAWARMA',90,'Shawarmas'],
+['HUMMUS CHICKEN SHAWARMA',100,'Shawarmas'],
+
+// SALADS
+['CLASSIC CHICKEN SALAD',160,'Salads'],
+['FIRANGI CHICKEN SALAD',180,'Salads'],
+['PIRI PIRI CHICKEN SALAD',170,'Salads'],
+['ACHARI CHICKEN SALAD',170,'Salads'],
+['FIERY CHICKEN SALAD',170,'Salads'],
+['CHICKEN TIKKA SALAD',180,'Salads'],
+['BBQ CHICKEN SALAD',170,'Salads'],
+['CHILLI MILLI CHICKEN SALAD',170,'Salads'],
+['HUMMUS CHICKEN SALAD',180,'Salads'],
+
+// OPEN SHAWARMAS
+['CLASSIC CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['PIRI PIRI CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['ACHARI CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['FIERY CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['CHILLI MILLI CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['BBQ CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['CHICKEN TIKKA SHAWARMA',135,'Open Shawarmas'],
+['FIRANGI CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['HUMMUS CHICKEN SHAWARMA',135,'Open Shawarmas']
 ];
 
 let menu=JSON.parse(localStorage.getItem('rj_menu_items')||'null')||
@@ -340,7 +366,7 @@ const money=n=>'₹'+Math.round(Number(n)||0);
 function msg(t,err=false){
 let s=document.getElementById('status');
 s.textContent=t;
-s.className='text-center mt-2 '+(err?'text-red-400':'text-emerald-400');
+s.className='text-center mt-2 font-bold text-xs '+(err?'text-red-400':'text-emerald-400');
 }
 
 function drawer(){
@@ -358,8 +384,8 @@ if(v==='dashboard'||v==='reports')stats();
 function tab(t){
 document.getElementById('newPanel').classList.toggle('hidden',t!=='new');
 document.getElementById('billingPanel').classList.toggle('hidden',t!=='billing');
-document.getElementById('newTab').className=t==='new'?'bg-red-600 p-2 rounded':'p-2';
-document.getElementById('billTab').className=t==='billing'?'bg-red-600 p-2 rounded':'p-2';
+document.getElementById('newTab').className=t==='new'?'bg-red-600 p-2 rounded shadow font-bold text-xs':'p-2 text-gray-300 font-bold text-xs';
+document.getElementById('billTab').className=t==='billing'?'bg-red-600 p-2 rounded shadow font-bold text-xs':'p-2 text-gray-300 font-bold text-xs';
 if(t==='billing')historyLoad();
 }
 
@@ -374,10 +400,10 @@ let q=document.getElementById('search').value.toLowerCase();
 let arr=menu.filter(x=>x.name.toLowerCase().includes(q)&&(category==='all'||x.tag===category));
 
 document.getElementById('menuList').innerHTML=arr.map(x=>
-`<div class="flex justify-between items-center bg-gray-800 p-2 rounded">
-<div><b>${esc(x.name)}</b><p class="text-amber-400">${money(x.price)}</p></div>
-<button class="bg-emerald-600 p-2 rounded" onclick="addItem(${JSON.stringify(x.name).replace(/"/g,'&quot;')},${Number(x.price)})">ADD</button>
-</div>`).join('')||'<p>No items found</p>';
+`<div class="flex justify-between items-center bg-gray-800 p-2.5 rounded border border-gray-700">
+<div><b class="text-white text-xs">${esc(x.name)}</b><span class="text-[10px] bg-gray-700 px-1.5 py-0.5 ml-2 rounded text-gray-300 font-bold">${esc(x.tag)}</span><p class="text-amber-400 font-black text-xs mt-0.5">${money(x.price)}</p></div>
+<button class="bg-emerald-600 hover:bg-emerald-500 px-3 py-2 rounded text-white font-black text-xs shadow" onclick="addItem(${JSON.stringify(x.name).replace(/"/g,'&quot;')},${Number(x.price)})">ADD</button>
+</div>`).join('')||'<p class="text-gray-400 font-bold text-xs p-2">No items found</p>';
 }
 
 function addItem(n,p){
@@ -396,15 +422,15 @@ function drawCart(){
 document.getElementById('token').textContent='#'+token;
 
 document.getElementById('cart').innerHTML=cart.length?cart.map((x,i)=>
-`<div class="flex justify-between items-center bg-gray-800 p-2 rounded">
-<span class="truncate flex-1">${esc(x.name)}</span>
-<button onclick="qty(${i},-1)" class="px-2 text-red-300">−</button>
-<b>${x.qty}</b>
-<button onclick="qty(${i},1)" class="px-2 text-green-300">+</button>
-<span>${money(x.price*x.qty)}</span>
-<button onclick="cart.splice(${i},1);drawCart()" class="text-red-400 ml-2">×</button>
+`<div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700 text-xs font-bold">
+<span class="truncate flex-1 text-white">${esc(x.name)}</span>
+<button onclick="qty(${i},-1)" class="px-2 py-0.5 bg-gray-700 rounded text-red-300 font-black text-sm">×</button>
+<b class="px-2 text-white">${x.qty}</b>
+<button onclick="qty(${i},1)" class="px-2 py-0.5 bg-gray-700 rounded text-green-300 font-black text-sm">+</button>
+<span class="text-amber-300 ml-1">${money(x.price*x.qty)}</span>
+<button onclick="cart.splice(${i},1);drawCart()" class="text-red-400 font-black text-sm ml-2 px-1">🗑️</button>
 </div>`).join(''):
-'<p class="text-center text-gray-500 py-4">No items added yet.</p>';
+'<p class="text-center text-gray-400 font-bold py-4 text-xs">No items added yet.</p>';
 
 totals();
 }
@@ -428,14 +454,14 @@ return{sub,dp,disc,tax,grand};
 function payStyle(){
 ['Cash','Card','Due'].forEach(x=>
 document.getElementById(x.toLowerCase()).className=
-(pay===x?'bg-emerald-600':'bg-gray-700')+' p-2 rounded');
+(pay===x?'bg-emerald-600 text-white font-black shadow':'bg-gray-800 border border-gray-700 text-gray-300 font-bold')+' p-2.5 rounded text-xs');
 }
 
 /* GST BUTTON */
 function updateGSTButton(){
 let b=document.getElementById('gstButton');
 b.textContent=gstEnabled?'GST ON':'GST OFF';
-b.className=(gstEnabled?'bg-emerald-600':'bg-red-600')+' px-2 py-2 rounded';
+b.className=(gstEnabled?'bg-emerald-600':'bg-red-600')+' px-2.5 py-1.5 rounded font-bold text-xs shadow';
 }
 
 function toggleGST(){
@@ -482,6 +508,7 @@ total:t.grand,
 paymentMode:pay,
 note:document.getElementById('note').value||'',
 shopName:shop,
+shopPhone:shopPhone,
 timestamp:Date.now()
 };
 
@@ -518,22 +545,25 @@ let grand=order?order.total:t.grand;
 let enabled=order?!!order.gstEnabled:gstEnabled;
 let rate=order?Number(order.gstRate||0):gstRate;
 let num=order?order.gstNumber:gstNumber;
+let phone=order?order.shopPhone:shopPhone;
 
 document.getElementById('rShop').textContent=order?.shopName||shop;
+document.getElementById('rGst').textContent=num?("GSTIN: "+num):"";
+document.getElementById('rPhone').textContent=phone?("Phone: "+phone):"";
 document.getElementById('rToken').textContent='#'+(order?.token||token);
 
 document.getElementById('rItems').innerHTML=items.map(i=>
-`<div style="display:flex;justify-content:space-between;margin:4px 0">
+`<div style="display:flex;justify-content:space-between;margin:4px 0;font-weight:bold">
 <span>${esc(i.name)} ×${i.qty}</span>
 <span>${money(i.price*i.qty)}</span>
 </div>`).join('');
 
 document.getElementById('rTotals').innerHTML=
-`<p>Subtotal: ${money(sub)}</p>
-${dp?`<p>Discount (${dp}%): -${money(disc)}</p>`:''}
-${enabled?`<p>GST ${rate}%: ${money(tax)}</p>${num?`<p>GSTIN: ${esc(num)}</p>`:''}`:'<p>GST: OFF</p>'}
-<h3 style="font-size:15px">Total: ${money(grand)}</h3>
-<p>Payment: ${order?.paymentMode||pay}</p>`;
+`<p style="font-weight:bold">Subtotal: ${money(sub)}</p>
+${dp?`<p style="font-weight:bold">Discount (${dp}%): -${money(disc)}</p>`:''}
+${enabled?`<p style="font-weight:bold">GST ${rate}%: ${money(tax)}</p>`:'<p style="font-weight:bold">GST: OFF</p>'}
+<h3 style="font-size:15px;font-weight:bold">Total: ${money(grand)}</h3>
+<p style="font-weight:bold">Payment: ${order?.paymentMode||pay}</p>`;
 }
 
 function printBill(){
@@ -581,14 +611,14 @@ ordersCache=snap.val()||{};
 let a=Object.entries(ordersCache).reverse();
 
 h.innerHTML=a.map(([k,o])=>
-`<div class="bg-gray-900 p-3 rounded flex justify-between gap-2">
+`<div class="bg-gray-900 p-3 rounded border border-gray-800 flex justify-between gap-2 font-bold text-xs">
 <div>
-<b>Token #${o.token}</b> ${money(o.total)}
-<p>${(o.items||[]).map(i=>esc(i.name)+' ×'+i.qty).join(', ')}</p>
-<small>${new Date(o.timestamp).toLocaleString()} | ${o.paymentMode}</small>
+<b class="text-amber-400 text-sm">Token #${o.token}</b> <span class="text-white ml-1">${money(o.total)}</span>
+<p class="text-gray-200 mt-1">${(o.items||[]).map(i=>esc(i.name)+' ×'+i.qty).join(', ')}</p>
+<small class="text-gray-400 mt-0.5 block">${new Date(o.timestamp).toLocaleString()} | ${o.paymentMode}</small>
 </div>
-<button class="bg-blue-600 p-2 rounded" onclick="duplicate('${k}')">Duplicate Print</button>
-</div>`).join('')||'No saved bills';
+<button class="bg-blue-600 hover:bg-blue-500 px-3 py-2 rounded text-white font-black shadow h-fit" onclick="duplicate('${k}')">Duplicate Print</button>
+</div>`).join('')||'<p class="text-gray-400 text-xs">No saved bills</p>';
 
 }catch(e){
 h.textContent='Firebase Error: '+e.message;
@@ -625,6 +655,7 @@ document.getElementById('report').textContent='Firebase: '+e.message;
 /* SETTINGS */
 function settingsOpen(){
 document.getElementById('shopName').value=shop;
+document.getElementById('shopPhone').value=shopPhone;
 document.getElementById('gstEnabled').checked=gstEnabled;
 document.getElementById('gstRate').value=gstRate;
 document.getElementById('gstNumber').value=gstNumber;
@@ -643,12 +674,14 @@ document.getElementById('settings').classList.add('hidden');
 }
 
 function settingsSave(){
-shop=document.getElementById('shopName').value.trim()||'RJ Restaurant';
+shop=document.getElementById('shopName').value.trim()||'Mister Shawarma';
+shopPhone=document.getElementById('shopPhone').value.trim();
 gstEnabled=document.getElementById('gstEnabled').checked;
 gstRate=Math.min(100,Math.max(0,Number(document.getElementById('gstRate').value)||0));
 gstNumber=document.getElementById('gstNumber').value.trim().toUpperCase();
 
 localStorage.setItem('rj_shop_name',shop);
+localStorage.setItem('rj_shop_phone',shopPhone);
 localStorage.setItem('rj_gst_enabled',gstEnabled);
 localStorage.setItem('rj_gst_rate',gstRate);
 localStorage.setItem('rj_gst_number',gstNumber);
@@ -674,10 +707,11 @@ renderMenu();
 function menuAdd(){
 let n=document.getElementById('newName').value.trim();
 let p=+document.getElementById('newPrice').value||0;
+let tg=document.getElementById('newTag').value;
 
 if(!n)return alert('Item name लिखें');
 
-menu.push({name:n,price:p,tag:'Veg'});
+menu.push({name:n,price:p,tag:tg});
 menuSave();
 
 document.getElementById('newName').value='';
@@ -691,12 +725,17 @@ localStorage.setItem('rj_menu_items',JSON.stringify(menu));
 
 function editMenuRender(){
 document.getElementById('editMenu').innerHTML=menu.map((x,i)=>
-`<div class="flex gap-1">
-<input class="bg-gray-800 p-1 rounded flex-1" value="${esc(x.name)}"
+`<div class="flex gap-1.5 items-center">
+<input class="bg-gray-800 p-2 rounded flex-1 text-xs text-white font-bold outline-none border border-gray-700" value="${esc(x.name)}"
 onchange="menu[${i}].name=this.value;menuSave()">
-<input class="bg-gray-800 p-1 rounded w-20" type="number" value="${x.price}"
+<input class="bg-gray-800 p-2 rounded w-16 text-xs text-white font-bold outline-none border border-gray-700 text-right" type="number" value="${x.price}"
 onchange="menu[${i}].price=+this.value;menuSave()">
-<button onclick="menu.splice(${i},1);menuSave();editMenuRender()" class="text-red-400">×</button>
+<select class="bg-gray-800 p-2 rounded text-xs text-white font-bold outline-none border border-gray-700" onchange="menu[${i}].tag=this.value;menuSave()">
+<option value="Shawarmas" ${x.tag==='Shawarmas'?'selected':''}>Shawarmas</option>
+<option value="Salads" ${x.tag==='Salads'?'selected':''}>Salads</option>
+<option value="Open Shawarmas" ${x.tag==='Open Shawarmas'?'selected':''}>Open Shawarmas</option>
+</select>
+<button onclick="menu.splice(${i},1);menuSave();editMenuRender()" class="text-red-400 px-2 font-black text-sm">✕</button>
 </div>`).join('');
 }
 
