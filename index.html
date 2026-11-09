@@ -1,192 +1,141 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>RJ Restaurant POS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RJ Mister Shawarma POS</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <style>
-body{font-size:12px}
-button{touch-action:manipulation}
-#receipt,#kot{display:none}
-@media print{
-body *{visibility:hidden!important}
-#receipt.printing,#receipt.printing *,
-#kot.printing,#kot.printing *{visibility:visible!important}
-#receipt.printing,#kot.printing{
-display:block!important;position:absolute;top:0;left:0;
-width:100%;padding:12px;background:white;color:black;font:12px monospace
-}
-}
+*{box-sizing:border-box}
+body{margin:0;background:#101827;color:#fff;font-family:Arial}
+header{background:#172554;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+button{border:0;padding:11px;border-radius:8px;color:white;background:#2563eb;font-weight:bold;cursor:pointer}
+input,select{padding:10px;border-radius:7px;border:1px solid #64748b;width:100%;margin:5px 0;background:#fff;color:#111}
+.card{background:#1e293b;padding:14px;margin:10px;border-radius:12px}
+h3{margin-top:5px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.item{background:#334155;padding:12px;border-radius:8px;text-align:center}
+.item button{margin-top:7px}
+.green{background:#15803d}
+.red{background:#dc2626}
+.orange{background:#c2410c}
+.small{font-size:12px;color:#cbd5e1}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:7px 0}
+#drawer{display:none;background:#172554;padding:10px}
+#drawer button{margin:4px}
+.hidden{display:none}
+table{width:100%;border-collapse:collapse}
+td,th{border-bottom:1px solid #475569;padding:8px;text-align:left}
 </style>
 </head>
 
-<body class="bg-gray-950 text-white h-screen flex flex-col overflow-hidden">
+<body>
 
-<header class="bg-gray-900 border-b border-gray-800 p-3 flex justify-between">
+<header>
 <div>
-<button onclick="drawer()">☰</button>
-<b class="bg-white text-black px-2 rounded">RJ</b>
-<span id="shopHead">RJ Restaurant POS</span>
+<b>RJ MISTER SHAWARMA</b>
+<div class="small">Billing & Sales Report</div>
 </div>
-<button onclick="settingsOpen()">⚙️</button>
+<div style="display:flex;gap:5px">
+<button id="gstButton" class="red" onclick="toggleGST()">GST OFF</button>
+<button onclick="toggleDrawer()">☰</button>
+</div>
 </header>
 
-<div id="drawerBox" class="hidden fixed inset-0 z-40 bg-black/70" onclick="this.classList.add('hidden')">
-<div class="bg-gray-900 w-64 h-full p-4 space-y-3" onclick="event.stopPropagation()">
-<button class="block" onclick="go('pos')">🛒 New Order</button>
-<button class="block" onclick="menuOpen()">✏️ Edit Menu</button>
-<button class="block" onclick="go('dashboard')">📊 Dashboard</button>
-<button class="block" onclick="go('reports')">📈 Reports</button>
-<button class="block" onclick="settingsOpen()">⚙️ Settings</button>
-</div>
+<div id="drawer">
+<button onclick="showPage('billing')">Billing</button>
+<button onclick="showPage('saved')">Saved Bills</button>
+<button onclick="showPage('reports')">Reports</button>
+<button onclick="showPage('settings')">Settings</button>
 </div>
 
-<main class="flex-1 min-h-0 flex flex-col">
+<!-- BILLING -->
+<section id="billing" class="page">
 
-<div id="pos" class="flex-1 min-h-0 flex flex-col">
-
-<div class="grid grid-cols-2 bg-gray-900 p-1">
-<button id="newTab" class="bg-red-600 p-2 rounded" onclick="tab('new')">New Order</button>
-<button id="billTab" class="p-2" onclick="tab('billing')">Billing / Saved Bills</button>
+<div class="card">
+<h3>New Order / Billing</h3>
+<input id="customer" placeholder="Customer Name">
+<input id="mobile" placeholder="Mobile Number">
+<input id="search" placeholder="Menu Search" oninput="renderMenu()">
+<div id="menu" class="grid"></div>
 </div>
 
-<div id="newPanel" class="flex-1 min-h-0 grid md:grid-cols-2 gap-2 p-2 overflow-auto">
+<div class="card">
+<h3>🛒 Cart</h3>
+<div id="cart"></div>
 
-<section class="bg-gray-900 rounded p-2 flex flex-col min-h-0">
-<input id="search" placeholder="🔍 Search item..." class="bg-gray-800 p-2 rounded mb-2" oninput="renderMenu()">
+<div class="row"><span>Subtotal</span><b id="subtotal">₹0</b></div>
+<div class="row"><span>Discount ₹</span>
+<input id="discount" type="number" value="0" style="width:100px" oninput="renderCart()">
+</div>
+<div class="row"><span>GST</span><b id="tax">₹0</b></div>
+<div class="row"><h3>Total</h3><h3 id="grand">₹0</h3></div>
 
-<div class="flex gap-1 flex-wrap mb-2">
-<button class="bg-gray-700 p-1 rounded" onclick="category='all';renderMenu()">All</button>
-<button class="bg-gray-700 p-1 rounded" onclick="category='Veg';renderMenu()">Veg</button>
-<button class="bg-gray-700 p-1 rounded" onclick="category='Non-Veg';renderMenu()">Non-Veg</button>
+<select id="payment">
+<option>Cash</option>
+<option>Card</option>
+<option>UPI</option>
+<option>Due</option>
+</select>
+
+<button class="green" onclick="saveBill()">💾 SAVE BILL</button>
+<button onclick="printBill()">🖨 PRINT</button>
+<button class="orange" onclick="printKOT()">KOT</button>
+<button class="red" onclick="clearCart()">Clear Cart</button>
 </div>
 
-<div id="menuList" class="overflow-auto space-y-2"></div>
 </section>
 
-<section class="bg-gray-900 rounded p-2 flex flex-col min-h-0">
-
-<div class="flex justify-between mb-2">
-<b>Token <span id="token">#1</span></b>
-<span>👥 2 persons</span>
+<!-- SAVED -->
+<section id="saved" class="page hidden">
+<div class="card">
+<h3>Saved Bills</h3>
+<button onclick="loadBills()">Refresh</button>
+<div id="savedBills"></div>
 </div>
-
-<div id="cart" class="space-y-2 overflow-auto flex-1">
-<p class="text-center text-gray-500">No items added yet.</p>
-</div>
-
-<input id="note" class="bg-gray-800 p-2 rounded my-2" placeholder="Note / Special instruction">
-
-<div class="space-y-1 border-t border-gray-700 pt-2">
-<div class="flex justify-between"><span>Subtotal</span><b id="subtotal">₹0</b></div>
-
-<div class="flex justify-between items-center">
-<span>Discount (%)</span>
-<input id="discount" type="number" value="0" min="0" max="100" class="w-16 bg-gray-800 p-1 text-right" oninput="totals()">
-</div>
-
-<div class="flex justify-between"><span>GST 5%</span><b id="tax">₹0</b></div>
-
-<div class="flex justify-between bg-gray-800 p-2 rounded text-base">
-<b>Total</b><b id="grand" class="text-amber-400">₹0</b>
-</div>
-</div>
-
-<div class="grid grid-cols-3 gap-1 my-2">
-<button id="cash" onclick="pay='Cash';payStyle()" class="bg-emerald-600 p-2 rounded">Cash</button>
-<button id="card" onclick="pay='Card';payStyle()" class="bg-gray-700 p-2 rounded">Card</button>
-<button id="due" onclick="pay='Due';payStyle()" class="bg-gray-700 p-2 rounded">Due</button>
-</div>
-
-<div class="grid grid-cols-3 gap-1">
-<button id="saveBtn" onclick="saveBill()" class="bg-emerald-600 p-3 rounded font-bold">SAVE</button>
-<button onclick="printBill()" class="bg-blue-600 p-3 rounded font-bold">PRINT</button>
-<button onclick="printKot()" class="bg-amber-600 p-3 rounded font-bold">KOT</button>
-</div>
-
-<p id="status" class="text-center mt-2 min-h-4"></p>
 </section>
-</div>
 
-<div id="billingPanel" class="hidden p-3 overflow-auto">
-<button onclick="historyLoad()" class="bg-blue-600 p-2 rounded mb-3">Refresh Bills</button>
-<div id="history" class="space-y-2"></div>
-</div>
-</div>
-
-<div id="dashboard" class="hidden p-4">
-<h2 class="text-lg text-amber-400">Dashboard</h2>
-<p id="dash"></p>
-<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
-</div>
-
-<div id="reports" class="hidden p-4">
-<h2 class="text-lg text-amber-400">Sale Reports</h2>
-<div id="report"></div>
-<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
-</div>
-
-<div id="tables" class="hidden p-4">
-<h2 class="text-lg text-amber-400">Running Tables</h2>
-<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
-</div>
-
-</main>
-
-<footer class="bg-gray-900 grid grid-cols-4 text-center p-2">
-<button onclick="go('pos')">🛒 Order</button>
-<button onclick="go('tables')">🪑 Tables</button>
-<button onclick="go('reports')">📊 Reports</button>
-<button onclick="settingsOpen()">⚙️ Settings</button>
-</footer>
-
-<div id="settings" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-<div class="bg-gray-900 p-4 rounded w-full max-w-sm">
-<h3 class="text-amber-400 font-bold mb-2">Restaurant Settings</h3>
-<input id="shopName" class="bg-gray-800 p-2 w-full rounded">
-<div class="flex justify-end gap-2 mt-3">
-<button onclick="settingsClose()" class="bg-gray-700 p-2 rounded">Cancel</button>
-<button onclick="settingsSave()" class="bg-emerald-600 p-2 rounded">Save</button>
-</div>
-</div>
-</div>
-
-<div id="menuModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3">
-<div class="bg-gray-900 p-3 rounded w-full max-w-md max-h-[90vh] flex flex-col">
-<h3 class="text-amber-400 font-bold mb-2">Edit Menu</h3>
-<div class="flex gap-1">
-<input id="newName" placeholder="Item name" class="bg-gray-800 p-2 rounded flex-1">
-<input id="newPrice" type="number" placeholder="₹" class="bg-gray-800 p-2 rounded w-20">
-<button onclick="menuAdd()" class="bg-emerald-600 p-2 rounded">Add</button>
-</div>
-<div id="editMenu" class="overflow-auto flex-1 space-y-2 my-2"></div>
-<button onclick="menuClose()" class="bg-red-600 p-2 rounded">Close</button>
-</div>
-</div>
-
-<div id="receipt">
-<h2 id="rShop" style="text-align:center;font-weight:bold;font-size:16px"></h2>
-<p style="text-align:center">CUSTOMER BILL</p>
-<p>Token: <span id="rToken"></span></p>
+<!-- REPORTS -->
+<section id="reports" class="page hidden">
+<div class="card">
+<h3>Reports</h3>
+<input type="date" id="reportDate">
+<button onclick="loadReports()">Show Report</button>
 <hr>
-<div id="rItems"></div>
-<hr>
-<div id="rTotals"></div>
-<p style="text-align:center;margin-top:12px">Thank You! Visit Again.</p>
+<p>Daily Sale: <b id="daily">₹0</b></p>
+<p>Total Sale: <b id="totalSale">₹0</b></p>
+<p>Total Kharcha: <b id="expenseTotal">₹0</b></p>
+<button onclick="addExpense()">➕ Add Kharcha</button>
+<button onclick="whatsappReport()">WhatsApp Report</button>
+<div id="expenses"></div>
 </div>
+</section>
 
-<div id="kot">
-<h2 style="text-align:center;font-weight:bold">KITCHEN ORDER TICKET</h2>
-<p>Token <span id="kToken"></span> | <span id="kTime"></span></p>
+<!-- SETTINGS -->
+<section id="settings" class="page hidden">
+<div class="card">
+<h3>⚙️ Settings</h3>
+<label>Shop Name</label>
+<input id="shopName" value="RJ MISTER SHAWARMA">
+<label>GST चालू करें</label>
+<input type="checkbox" id="gstCheck" onchange="settingsTaxPreview()" style="width:auto">
+<label>GST Rate (%)</label>
+<input id="gstRate" type="number" value="5">
+<label>GSTIN</label>
+<input id="gstNumber" placeholder="GSTIN Number">
+<button onclick="saveSettings()">Save Settings</button>
 <hr>
-<div id="kItems"></div>
-<p id="kNote"></p>
+<h3>Menu Edit</h3>
+<input id="newItem" placeholder="Item Name">
+<input id="newPrice" type="number" placeholder="Price">
+<button onclick="addMenuItem()">Add Menu Item</button>
+<div id="menuEdit"></div>
 </div>
+</section>
 
 <script>
 const firebaseConfig={
@@ -196,306 +145,302 @@ projectId:"rj-billing-app",
 storageBucket:"rj-billing-app.firebasestorage.app"
 };
 
-let db=null;
-try{
-if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
-db=firebase.database();
-}catch(e){console.error(e)}
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
 
-let shop=localStorage.getItem('rj_shop_name')||'RJ Restaurant';
-let token=+(localStorage.getItem('rj_token_no')||1);
-let pay='Cash',cart=[],category='all',ordersCache={};
-
-const defaultItems=[
-['Chicken Shawarma',100,'Non-Veg'],
-['Margherita Pizza',180,'Veg'],
-['Veg Burger',120,'Veg'],
-['Cold Coffee',80,'Beverages'],
-['French Fries',60,'Veg'],
-['Paneer Pizza',200,'Veg'],
-['Chicken Biryani',160,'Non-Veg'],
-['Veg Pasta',140,'Veg'],
-['Chicken Roll',100,'Non-Veg'],
-['Masala Dosa',90,'Veg'],
-['Ice Cream',70,'Veg'],
-['Tomato Soup',60,'Veg'],
-['Veg Sandwich',80,'Veg'],
-['Chocolate Shake',90,'Beverages'],
-['Mango Shake',80,'Beverages'],
-['Oreo Shake',100,'Beverages'],
-['Hot Coffee',60,'Beverages']
+let cart=[];
+let bills=[];
+let expenses=[];
+let menuItems=[
+{name:"Chicken Shawarma",price:120},
+{name:"Chicken Roll",price:100},
+{name:"Rumali Shawarma",price:150},
+{name:"Special Shawarma",price:180},
+{name:"Cold Drink",price:40},
+{name:"French Fries",price:80}
 ];
 
-let menu=JSON.parse(localStorage.getItem('rj_menu_items')||'null')||
-defaultItems.map(x=>({name:x[0],price:x[1],tag:x[2]}));
+let gstEnabled=localStorage.getItem("rj_gst_enabled")==="true";
+let gstRate=Number(localStorage.getItem("rj_gst_rate")||5);
+let gstNumber=localStorage.getItem("rj_gst_number")||"";
+let shopName=localStorage.getItem("rj_shop_name")||"RJ MISTER SHAWARMA";
 
-const money=n=>'₹'+Math.round(Number(n)||0);
+function money(n){return "₹"+Number(n||0).toFixed(2)}
 
-function msg(t,err=false){
-let s=document.getElementById('status');
-s.textContent=t;
-s.className='text-center mt-2 '+(err?'text-red-400':'text-emerald-400');
+function toggleDrawer(){
+let d=document.getElementById("drawer");
+d.style.display=d.style.display==="block"?"none":"block";
 }
 
-function drawer(){document.getElementById('drawerBox').classList.toggle('hidden')}
-
-function go(v){
-['pos','dashboard','reports','tables'].forEach(x=>document.getElementById(x).classList.add('hidden'));
-document.getElementById(v).classList.remove('hidden');
-if(v==='pos')tab('new');
-if(v==='dashboard'||v==='reports')stats();
+function showPage(id){
+document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
+document.getElementById("drawer").style.display="none";
+if(id==="saved")loadBills();
+if(id==="reports")loadReports();
+if(id==="settings")openSettings();
 }
 
-function tab(t){
-document.getElementById('newPanel').classList.toggle('hidden',t!=='new');
-document.getElementById('billingPanel').classList.toggle('hidden',t!=='billing');
-document.getElementById('newTab').className=t==='new'?'bg-red-600 p-2 rounded':'p-2';
-document.getElementById('billTab').className=t==='billing'?'bg-red-600 p-2 rounded':'p-2';
-if(t==='billing')historyLoad();
+function updateGSTButton(){
+let b=document.getElementById("gstButton");
+b.textContent=gstEnabled?"GST ON":"GST OFF";
+b.className=gstEnabled?"green":"red";
 }
 
-function esc(s){
-return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toggleGST(){
+gstEnabled=!gstEnabled;
+localStorage.setItem("rj_gst_enabled",gstEnabled);
+document.getElementById("gstCheck").checked=gstEnabled;
+updateGSTButton();
+renderCart();
+}
+
+function settingsTaxPreview(){
+gstEnabled=document.getElementById("gstCheck").checked;
+updateGSTButton();
+}
+
+function openSettings(){
+document.getElementById("shopName").value=shopName;
+document.getElementById("gstCheck").checked=gstEnabled;
+document.getElementById("gstRate").value=gstRate;
+document.getElementById("gstNumber").value=gstNumber;
+renderMenuEdit();
+}
+
+function saveSettings(){
+shopName=document.getElementById("shopName").value||"RJ MISTER SHAWARMA";
+gstEnabled=document.getElementById("gstCheck").checked;
+gstRate=Number(document.getElementById("gstRate").value||5);
+gstNumber=document.getElementById("gstNumber").value;
+localStorage.setItem("rj_shop_name",shopName);
+localStorage.setItem("rj_gst_enabled",gstEnabled);
+localStorage.setItem("rj_gst_rate",gstRate);
+localStorage.setItem("rj_gst_number",gstNumber);
+updateGSTButton();
+renderCart();
+alert("Settings Saved");
 }
 
 function renderMenu(){
-let q=document.getElementById('search').value.toLowerCase();
-let arr=menu.filter(x=>x.name.toLowerCase().includes(q)&&(category==='all'||x.tag===category));
-document.getElementById('menuList').innerHTML=arr.map(x=>
-`<div class="flex justify-between items-center bg-gray-800 p-2 rounded">
-<div><b>${esc(x.name)}</b><p class="text-amber-400">${money(x.price)}</p></div>
-<button class="bg-emerald-600 p-2 rounded" onclick="addItem(${JSON.stringify(x.name).replace(/"/g,'&quot;')},${Number(x.price)})">ADD</button>
-</div>`).join('')||'<p>No items found</p>';
+let q=document.getElementById("search").value.toLowerCase();
+let html="";
+menuItems.filter(x=>x.name.toLowerCase().includes(q)).forEach((x,i)=>{
+html+=`<div class="item">
+<b>${x.name}</b><br>${money(x.price)}
+<br><button onclick="addCart('${x.name.replace(/'/g,"")}')">ADD +</button>
+</div>`;
+});
+document.getElementById("menu").innerHTML=html;
 }
 
-function addItem(n,p){
-let x=cart.find(i=>i.name===n);
-x?x.qty++:cart.push({name:n,price:+p,qty:1});
-drawCart();
+function addCart(name){
+let item=menuItems.find(x=>x.name===name);
+if(!item)return;
+let found=cart.find(x=>x.name===name);
+if(found)found.qty++;
+else cart.push({name:item.name,price:item.price,qty:1});
+renderCart();
 }
 
-function qty(i,d){
-cart[i].qty+=d;
-if(cart[i].qty<1)cart.splice(i,1);
-drawCart();
-}
-
-function drawCart(){
-document.getElementById('token').textContent='#'+token;
-document.getElementById('cart').innerHTML=cart.length?
-cart.map((x,i)=>`<div class="flex justify-between items-center bg-gray-800 p-2 rounded">
-<span class="truncate flex-1">${esc(x.name)}</span>
-<button onclick="qty(${i},-1)" class="px-2 text-red-300">−</button>
-<b>${x.qty}</b>
-<button onclick="qty(${i},1)" class="px-2 text-green-300">+</button>
-<span>${money(x.price*x.qty)}</span>
-<button onclick="cart.splice(${i},1);drawCart()" class="text-red-400 ml-2">×</button>
-</div>`).join(''):
-'<p class="text-center text-gray-500 py-4">No items added yet.</p>';
-totals();
-}
-
-function totals(){
-let sub=cart.reduce((s,x)=>s+x.price*x.qty,0);
-let dp=Math.min(100,Math.max(0,+document.getElementById('discount').value||0));
-let disc=sub*dp/100;
-let tax=Math.round((sub-disc)*.05);
+function renderCart(){
+let html="",sub=0;
+cart.forEach((x,i)=>{
+let total=x.price*x.qty;
+sub+=total;
+html+=`<div class="row">
+<span>${x.name}<br>${money(x.price)} × ${x.qty}</span>
+<div>
+<button onclick="changeQty(${i},-1)">−</button>
+<button onclick="changeQty(${i},1)">+</button>
+<button class="red" onclick="removeItem(${i})">×</button>
+</div>
+</div>`;
+});
+let disc=Number(document.getElementById("discount").value||0);
+disc=Math.min(disc,sub);
+let tax=gstEnabled?Math.round((sub-disc)*gstRate/100):0;
 let grand=Math.round(sub-disc+tax);
-document.getElementById('subtotal').textContent=money(sub);
-document.getElementById('tax').textContent=money(tax);
-document.getElementById('grand').textContent=money(grand);
-return{sub,dp,disc,tax,grand};
+
+document.getElementById("cart").innerHTML=html||"Cart Empty";
+document.getElementById("subtotal").textContent=money(sub);
+document.getElementById("tax").textContent=money(tax);
+document.getElementById("grand").textContent=money(grand);
+return {sub,disc,tax,grand};
 }
 
-function payStyle(){
-['Cash','Card','Due'].forEach(x=>
-document.getElementById(x.toLowerCase()).className=
-(pay===x?'bg-emerald-600':'bg-gray-700')+' p-2 rounded');
+function changeQty(i,n){
+cart[i].qty+=n;
+if(cart[i].qty<=0)cart.splice(i,1);
+renderCart();
 }
 
-/* FIXED SAVE BUTTON */
+function removeItem(i){cart.splice(i,1);renderCart()}
+function clearCart(){cart=[];renderCart()}
+
 async function saveBill(){
-if(!cart.length){
-msg('ऑर्डर खाली है! पहले item जोड़ें।',true);
-return;
-}
-if(!db){
-msg('Firebase initialize नहीं हुआ।',true);
-return;
-}
-
-const b=document.getElementById('saveBtn');
-b.disabled=true;
-b.textContent='Saving…';
-
-const t=totals();
-const data={
-token:token,
+if(!cart.length){alert("Cart Empty");return}
+let t=renderCart();
+let bill={
+customer:document.getElementById("customer").value||"Customer",
+mobile:document.getElementById("mobile").value||"",
 items:cart.map(x=>({...x})),
 subtotal:t.sub,
-discountPercent:t.dp,
-discountAmount:Math.round(t.disc),
-tax:t.tax,
+discount:t.disc,
+gst:t.tax,
+gstEnabled,
+gstRate,
+gstNumber,
 total:t.grand,
-paymentMode:pay,
-note:document.getElementById('note').value||'',
-shopName:shop,
-timestamp:Date.now()
+payment:document.getElementById("payment").value,
+date:new Date().toISOString(),
+time:new Date().toLocaleString("en-IN"),
+shop:shopName
 };
 
 try{
-const ref=await db.ref('orders').push(data);
-if(!ref.key)throw new Error('Firebase ने बिल ID नहीं दी');
-
-msg('बिल सेव हो गया ✓');
+await db.ref("orders").push(bill);
+alert("Bill Saved Successfully");
 cart=[];
-document.getElementById('note').value='';
-document.getElementById('discount').value=0;
-token++;
-localStorage.setItem('rj_token_no',token);
-drawCart();
-
+document.getElementById("customer").value="";
+document.getElementById("mobile").value="";
+document.getElementById("discount").value=0;
+renderCart();
 }catch(e){
-console.error('SAVE ERROR:',e);
-msg('SAVE नहीं हुआ: '+(e.message||e.code||e),true);
-alert('Bill Save Error:\n'+(e.message||e.code||e));
-}finally{
-b.disabled=false;
-b.textContent='SAVE';
+alert("Save Error: "+e.message);
 }
 }
 
-function receiptData(order){
-let t=totals();
-let items=order?order.items:cart;
-let sub=order?order.subtotal:t.sub;
-let dp=order?order.discountPercent:t.dp;
-let disc=order?order.discountAmount:Math.round(t.disc);
-let tax=order?order.tax:t.tax;
-let grand=order?order.total:t.grand;
+async function loadBills(){
+let box=document.getElementById("savedBills");
+box.innerHTML="Loading...";
+try{
+let snap=await db.ref("orders").once("value");
+bills=[];
+snap.forEach(s=>bills.push({id:s.key,...s.val()}));
+bills.reverse();
+box.innerHTML=bills.map(b=>`
+<div class="card">
+<b>${b.customer}</b><br>${b.time||b.date}
+<br>Total: ${money(b.total)} | ${b.payment}
+<br><button onclick="viewBill('${b.id}')">View</button>
+<button onclick="shareBill('${b.id}')">WhatsApp</button>
+</div>`).join("")||"No Bills";
+}catch(e){box.innerHTML=e.message}
+}
 
-document.getElementById('rShop').textContent=order?.shopName||shop;
-document.getElementById('rToken').textContent='#'+(order?.token||token);
-document.getElementById('rItems').innerHTML=items.map(i=>
-`<div style="display:flex;justify-content:space-between;margin:4px 0">
-<span>${esc(i.name)} ×${i.qty}</span><span>${money(i.price*i.qty)}</span>
-</div>`).join('');
+function viewBill(id){
+let b=bills.find(x=>x.id===id);
+if(!b)return;
+alert("Customer: "+b.customer+"\nTotal: "+money(b.total)+"\nPayment: "+b.payment);
+}
 
-document.getElementById('rTotals').innerHTML=
-`<p>Subtotal: ${money(sub)}</p>
-${dp?`<p>Discount (${dp}%): -${money(disc)}</p>`:''}
-<p>GST 5%: ${money(tax)}</p>
-<h3 style="font-size:15px">Total: ${money(grand)}</h3>
-<p>Payment: ${order?.paymentMode||pay}</p>`;
+function shareBill(id){
+let b=bills.find(x=>x.id===id);
+if(!b)return;
+let text=`${b.shop}\nCustomer: ${b.customer}\nTotal: ${money(b.total)}\nPayment: ${b.payment}`;
+window.open("https://wa.me/?text="+encodeURIComponent(text));
 }
 
 function printBill(){
-if(!cart.length){msg('ऑर्डर खाली है!',true);return}
-receiptData();
-printEl('receipt');
+let t=renderCart();
+let text=`<h2>${shopName}</h2>
+<h3>Bill</h3>
+Customer: ${document.getElementById("customer").value}<hr>
+${cart.map(x=>`${x.name} × ${x.qty} = ${money(x.price*x.qty)}<br>`).join("")}
+<hr>Subtotal: ${money(t.sub)}<br>
+Discount: ${money(t.disc)}<br>
+GST: ${money(t.tax)}<br>
+<h3>Total: ${money(t.grand)}</h3>`;
+let w=window.open("","","width=400,height=600");
+w.document.write(text);
+w.document.close();
+w.print();
 }
 
-function printEl(id){
-let el=document.getElementById(id);
-el.classList.add('printing');
-window.addEventListener('afterprint',()=>el.classList.remove('printing'),{once:true});
-window.print();
-setTimeout(()=>el.classList.remove('printing'),1500);
+function printKOT(){
+let text=`<h2>${shopName}</h2><h3>KOT</h3>
+${cart.map(x=>`${x.name} × ${x.qty}<br>`).join("")}`;
+let w=window.open("","","width=400,height=600");
+w.document.write(text);
+w.document.close();
+w.print();
 }
 
-function printKot(){
-if(!cart.length){msg('ऑर्डर खाली है!',true);return}
-document.getElementById('kToken').textContent='#'+token;
-document.getElementById('kTime').textContent=new Date().toLocaleString();
-document.getElementById('kItems').innerHTML=cart.map(x=>
-`<p style="display:flex;justify-content:space-between;font-weight:bold">
-<span>${esc(x.name)}</span><span>Qty ${x.qty}</span></p>`).join('');
-document.getElementById('kNote').textContent=document.getElementById('note').value;
-printEl('kot');
-}
-
-async function historyLoad(){
-let h=document.getElementById('history');
-h.innerHTML='Loading…';
-try{
-let snap=await db.ref('orders').once('value');
-ordersCache=snap.val()||{};
-let a=Object.entries(ordersCache).reverse();
-h.innerHTML=a.map(([k,o])=>
-`<div class="bg-gray-900 p-3 rounded flex justify-between gap-2">
-<div><b>Token #${o.token}</b> ${money(o.total)}
-<p>${(o.items||[]).map(i=>esc(i.name)+' ×'+i.qty).join(', ')}</p>
-<small>${new Date(o.timestamp).toLocaleString()} | ${o.paymentMode}</small>
-</div>
-<button class="bg-blue-600 p-2 rounded" onclick="duplicate('${k}')">Duplicate Print</button>
-</div>`).join('')||'No saved bills';
-}catch(e){h.textContent='Firebase Error: '+e.message}
-}
-
-function duplicate(k){
-let o=ordersCache[k];
-if(!o)return;
-receiptData(o);
-printEl('receipt');
-}
-
-async function stats(){
-try{
-let s=await db.ref('orders').once('value');
-let a=Object.values(s.val()||{});
-let today=new Date().toDateString();
-let tod=a.filter(o=>new Date(o.timestamp).toDateString()===today);
-let sum=tod.reduce((n,o)=>n+(+o.total||0),0);
-document.getElementById('dash').textContent=`Today sales: ${money(sum)} | Orders: ${tod.length}`;
-document.getElementById('report').textContent=
-`Today's Sale: ${money(sum)} | Total Sale: ${money(a.reduce((n,o)=>n+(+o.total||0),0))} | Total Orders: ${a.length}`;
-}catch(e){document.getElementById('report').textContent='Firebase: '+e.message}
-}
-
-function settingsOpen(){
-document.getElementById('shopName').value=shop;
-document.getElementById('settings').classList.remove('hidden');
-}
-function settingsClose(){document.getElementById('settings').classList.add('hidden')}
-function settingsSave(){
-shop=document.getElementById('shopName').value.trim()||'RJ Restaurant';
-localStorage.setItem('rj_shop_name',shop);
-document.getElementById('shopHead').textContent=shop;
-settingsClose();
-}
-
-function menuOpen(){
-document.getElementById('menuModal').classList.remove('hidden');
-editMenuRender();
-}
-function menuClose(){
-document.getElementById('menuModal').classList.add('hidden');
+function addMenuItem(){
+let name=document.getElementById("newItem").value;
+let price=Number(document.getElementById("newPrice").value);
+if(!name||price<=0){alert("Name aur Price bhare");return}
+menuItems.push({name,price});
+localStorage.setItem("rj_menu",JSON.stringify(menuItems));
+document.getElementById("newItem").value="";
+document.getElementById("newPrice").value="";
 renderMenu();
-}
-function menuAdd(){
-let n=document.getElementById('newName').value.trim();
-let p=+document.getElementById('newPrice').value||0;
-if(!n)return alert('Item name लिखें');
-menu.push({name:n,price:p,tag:'Veg'});
-menuSave();
-document.getElementById('newName').value='';
-document.getElementById('newPrice').value='';
-editMenuRender();
-}
-function menuSave(){localStorage.setItem('rj_menu_items',JSON.stringify(menu))}
-function editMenuRender(){
-document.getElementById('editMenu').innerHTML=menu.map((x,i)=>
-`<div class="flex gap-1">
-<input class="bg-gray-800 p-1 rounded flex-1" value="${esc(x.name)}" onchange="menu[${i}].name=this.value;menuSave()">
-<input class="bg-gray-800 p-1 rounded w-20" type="number" value="${x.price}" onchange="menu[${i}].price=+this.value;menuSave()">
-<button onclick="menu.splice(${i},1);menuSave();editMenuRender()" class="text-red-400">×</button>
-</div>`).join('');
+renderMenuEdit();
 }
 
-document.getElementById('shopHead').textContent=shop;
+function renderMenuEdit(){
+document.getElementById("menuEdit").innerHTML=menuItems.map((x,i)=>`
+<div class="row">${x.name} - ${money(x.price)}
+<button class="red" onclick="deleteMenu(${i})">Delete</button></div>`).join("");
+}
+
+function deleteMenu(i){
+menuItems.splice(i,1);
+localStorage.setItem("rj_menu",JSON.stringify(menuItems));
 renderMenu();
-drawCart();
-payStyle();
+renderMenuEdit();
+}
+
+function loadReports(){
+let date=document.getElementById("reportDate").value;
+if(!date)date=new Date().toISOString().slice(0,10);
+db.ref("orders").once("value").then(s=>{
+let all=[];
+s.forEach(x=>all.push(x.val()));
+let daily=all.filter(b=>(b.date||"").slice(0,10)===date);
+document.getElementById("daily").textContent=money(daily.reduce((a,b)=>a+Number(b.total||0),0));
+document.getElementById("totalSale").textContent=money(all.reduce((a,b)=>a+Number(b.total||0),0));
+});
+loadExpenses();
+}
+
+async function addExpense(){
+let amount=prompt("Kharcha Amount");
+if(!amount||Number(amount)<=0)return;
+let note=prompt("Kharcha kis liye?");
+await db.ref("expenses").push({
+amount:Number(amount),
+note:note||"Expense",
+date:new Date().toISOString(),
+time:new Date().toLocaleString("en-IN")
+});
+loadExpenses();
+loadReports();
+}
+
+async function loadExpenses(){
+let snap=await db.ref("expenses").once("value");
+expenses=[];
+snap.forEach(x=>expenses.push(x.val()));
+let total=expenses.reduce((a,b)=>a+Number(b.amount||0),0);
+document.getElementById("expenseTotal").textContent=money(total);
+document.getElementById("expenses").innerHTML=expenses.map(x=>
+`<p>${x.note}: ${money(x.amount)}</p>`).join("");
+}
+
+function whatsappReport(){
+let text=`${shopName}\nDaily Sale: ${document.getElementById("daily").textContent}\nTotal Sale: ${document.getElementById("totalSale").textContent}\nKharcha: ${document.getElementById("expenseTotal").textContent}`;
+window.open("https://wa.me/?text="+encodeURIComponent(text));
+}
+
+let savedMenu=localStorage.getItem("rj_menu");
+if(savedMenu){try{menuItems=JSON.parse(savedMenu)}catch(e){}}
+
+updateGSTButton();
+renderMenu();
+renderCart();
+document.getElementById("reportDate").value=new Date().toISOString().slice(0,10);
 </script>
 </body>
 </html>
