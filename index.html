@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RJ Restaurant POS</title>
+    <title>RJ Restaurant POS - Secure Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -33,6 +33,29 @@
 </head>
 <body class="bg-gray-950 text-white h-screen flex flex-col overflow-hidden text-xs font-sans">
     
+    <!-- Secure Login Screen -->
+    <div id="loginScreen" class="fixed inset-0 bg-gray-950 z-[100] flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 p-6 rounded-xl w-full max-w-sm space-y-4 shadow-2xl">
+            <div class="text-center">
+                <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center font-black text-white text-lg mx-auto mb-2 shadow">RJ</div>
+                <h2 class="font-bold text-base text-amber-400">RJ Restaurant Admin</h2>
+                <p class="text-[11px] text-gray-400">सुरक्षित लॉगिन (Secure Login)</p>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[11px] text-gray-400 block mb-1">मोबाइल नंबर (Mobile No.)</label>
+                    <input type="text" id="loginPhone" placeholder="8881544783" class="w-full bg-gray-800 border border-gray-700 p-2 rounded text-white text-xs outline-none focus:border-red-500">
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-400 block mb-1">पासवर्ड (Password)</label>
+                    <input type="password" id="loginPass" placeholder="Eshrar@" class="w-full bg-gray-800 border border-gray-700 p-2 rounded text-white text-xs outline-none focus:border-red-500">
+                </div>
+                <button type="button" onclick="verifyLogin()" class="w-full bg-red-600 hover:bg-red-500 text-white py-2.5 rounded font-bold text-xs shadow cursor-pointer">लॉगिन करें (Login)</button>
+                <p id="loginError" class="text-red-500 text-center text-[11px] font-bold"></p>
+            </div>
+        </div>
+    </div>
+
     <!-- Top Header -->
     <header class="bg-gray-900 border-b border-gray-800 px-3 py-2 flex justify-between items-center shrink-0">
         <div class="flex items-center gap-2">
@@ -243,6 +266,7 @@
     <div id="hiddenReceipt">
         <h2 id="receiptShopName" style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">RJ RESTAURANT</h2>
         <div id="receiptGstHeader" style="text-align:center; font-size:11px; margin-bottom:2px;"></div>
+        <div id="receiptPhoneHeader" style="text-align:center; font-size:11px; margin-bottom:4px;"></div>
         <p style="text-align:center; font-size:11px; margin-bottom:4px;">CUSTOMER BILL</p>
         <div style="font-size:11px; margin-bottom:6px;">Token: <span id="receiptToken"></span> | Persons: 2</div>
         <hr style="border-top:1px dashed black; margin-bottom:8px;">
@@ -261,7 +285,7 @@
         <div id="kotNote" style="font-size:11px; margin-top:8px; font-weight:bold;"></div>
     </div>
 
-    <!-- Settings Modal (With GST Number Input) -->
+    <!-- Settings Modal -->
     <div id="settingsModal" style="display: none;" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
         <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-sm space-y-3">
             <h3 class="font-bold text-base text-amber-400">⚙️ Restaurant Settings</h3>
@@ -270,10 +294,17 @@
                 <input type="text" id="settingShopName" value="RJ Restaurant" class="w-full bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
             </div>
             <div>
+                <label class="text-xs text-gray-400 block mb-1">Mobile Number</label>
+                <input type="text" id="settingPhoneNo" placeholder="e.g. 9876543210" class="w-full bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
+            </div>
+            <div>
                 <label class="text-xs text-gray-400 block mb-1">GST Number (Optional)</label>
                 <input type="text" id="settingGstNo" placeholder="e.g. 09AAAAA0000A1Z5" class="w-full bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none uppercase">
             </div>
-            <div class="flex justify-end gap-2 pt-2">
+            <div class="pt-2 border-t border-gray-800">
+                <button type="button" onclick="logoutApp()" class="w-full bg-red-600 hover:bg-red-500 text-white py-2 rounded text-xs font-bold shadow cursor-pointer mb-2">🔒 लॉगआउट करें (Logout)</button>
+            </div>
+            <div class="flex justify-end gap-2 pt-1">
                 <button type="button" onclick="closeSettings()" class="bg-gray-700 px-3 py-1.5 rounded text-xs font-bold cursor-pointer">Cancel</button>
                 <button type="button" onclick="saveSettings()" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold cursor-pointer">Save</button>
             </div>
@@ -320,6 +351,7 @@
 
         let restaurantName = localStorage.getItem('rj_shop_name') || "RJ Restaurant";
         let restaurantGst = localStorage.getItem('rj_shop_gst') || "";
+        let restaurantPhone = localStorage.getItem('rj_shop_phone') || "";
         
         document.getElementById('shopNameHeader').innerText = restaurantName;
         const drawerShopEl = document.getElementById('drawerShopName');
@@ -328,6 +360,11 @@
         let tokenNumber = parseInt(localStorage.getItem('rj_token_no')) || 1;
         const tokenDisplayEl = document.getElementById('tokenNoDisplay');
         if(tokenDisplayEl) tokenDisplayEl.innerText = '#' + tokenNumber;
+
+        // Check if already logged in previously
+        if(localStorage.getItem('rj_logged_in') === 'true') {
+            document.getElementById('loginScreen').style.display = 'none';
+        }
 
         let defaultMenuItems = [
             { name: "Chikan Shawarma", price: 100, category: "Starters", tag: "Non-Veg" },
@@ -353,6 +390,28 @@
         let currentOrder = [];
         let selectedPayment = "Cash";
         let cachedOrdersData = {};
+
+        function verifyLogin() {
+            let pInput = document.getElementById('loginPhone').value.trim();
+            let sInput = document.getElementById('loginPass').value.trim();
+            let errEl = document.getElementById('loginError');
+
+            if (pInput === "8881544783" && sInput === "Eshrar@") {
+                localStorage.setItem('rj_logged_in', 'true');
+                document.getElementById('loginScreen').style.display = 'none';
+            } else {
+                errEl.innerText = "गलत मोबाइल नंबर या पासवर्ड!";
+            }
+        }
+
+        function logoutApp() {
+            localStorage.removeItem('rj_logged_in');
+            closeSettings();
+            document.getElementById('loginPhone').value = '';
+            document.getElementById('loginPass').value = '';
+            document.getElementById('loginError').innerText = '';
+            document.getElementById('loginScreen').style.display = 'flex';
+        }
 
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
@@ -465,6 +524,7 @@
 
             document.getElementById('receiptShopName').innerText = restaurantName;
             document.getElementById('receiptGstHeader').innerText = restaurantGst ? "GSTIN: " + restaurantGst : "";
+            document.getElementById('receiptPhoneHeader').innerText = restaurantPhone ? "Phone: " + restaurantPhone : "";
             document.getElementById('receiptToken').innerText = '#' + ord.token;
             document.getElementById('receiptItemsList').innerHTML = receiptHTML;
             document.getElementById('receiptTotals').innerHTML = `
@@ -620,6 +680,7 @@
 
             document.getElementById('receiptShopName').innerText = restaurantName;
             document.getElementById('receiptGstHeader').innerText = restaurantGst ? "GSTIN: " + restaurantGst : "";
+            document.getElementById('receiptPhoneHeader').innerText = restaurantPhone ? "Phone: " + restaurantPhone : "";
             document.getElementById('receiptToken').innerText = '#' + tokenNumber;
             document.getElementById('receiptItemsList').innerHTML = receiptHTML;
             document.getElementById('receiptTotals').innerHTML = `
@@ -700,8 +761,10 @@
         function openSettings() {
             let settingInput = document.getElementById('settingShopName');
             let settingGst = document.getElementById('settingGstNo');
+            let settingPhone = document.getElementById('settingPhoneNo');
             if(settingInput) settingInput.value = restaurantName;
             if(settingGst) settingGst.value = restaurantGst;
+            if(settingPhone) settingPhone.value = restaurantPhone;
             let modal = document.getElementById('settingsModal');
             if(modal) modal.style.display = 'flex';
         }
@@ -714,8 +777,11 @@
         function saveSettings() {
             let settingInput = document.getElementById('settingShopName');
             let settingGst = document.getElementById('settingGstNo');
+            let settingPhone = document.getElementById('settingPhoneNo');
+            
             let newName = settingInput ? settingInput.value.trim() : '';
             let newGst = settingGst ? settingGst.value.trim().toUpperCase() : '';
+            let newPhone = settingPhone ? settingPhone.value.trim() : '';
 
             if(newName) {
                 restaurantName = newName;
@@ -727,6 +793,9 @@
 
             restaurantGst = newGst;
             localStorage.setItem('rj_shop_gst', restaurantGst);
+
+            restaurantPhone = newPhone;
+            localStorage.setItem('rj_shop_phone', restaurantPhone);
 
             showToast('सेटिंग्स सेव हो गई!');
             closeSettings();
