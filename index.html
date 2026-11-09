@@ -53,7 +53,7 @@ class="bg-emerald-600 p-3 rounded w-full font-bold text-sm shadow">LOGIN</button
 <header class="bg-gray-900 border-b border-gray-800 p-3 flex justify-between items-center">
 <div>
 <button onclick="drawer()" class="text-lg font-bold px-1">☰</button>
-<b class="bg-amber-400 text-black px-2 py-0.5 rounded text-sm font-black">MS</b>
+<b class="bg-white text-black px-2 py-0.5 rounded text-sm font-black"><span class="text-red-600">R</span>J</b>
 <span id="shopHead" class="font-bold text-sm">Mister Shawarma</span>
 </div>
 <div class="flex items-center gap-2">
@@ -314,7 +314,12 @@ if(user)auth.signOut();
 }
 
 /* APP DATA */
-let shop=localStorage.getItem('rj_shop_name')||'Mister Shawarma';
+let shop = localStorage.getItem('rj_shop_name') || 'Mister Shawarma';
+if(shop === 'RJ Restaurant') {
+    shop = 'Mister Shawarma';
+    localStorage.setItem('rj_shop_name', shop);
+}
+
 let shopPhone=localStorage.getItem('rj_shop_phone')||'';
 let token=+(localStorage.getItem('rj_token_no')||1);
 let pay='Cash',cart=[],category='all',ordersCache={};
