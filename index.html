@@ -46,7 +46,7 @@
         </div>
     </header>
 
-    <!-- Side Menu Drawer -->
+    <!-- Side Menu Drawer (With Edit Item / All Menu) -->
     <div id="sideDrawer" style="display: none;" class="fixed inset-0 z-50 flex">
         <div onclick="toggleSidebar()" class="fixed inset-0 bg-black/70"></div>
         <div class="relative bg-gray-900 w-64 h-full border-r border-gray-800 flex flex-col shadow-2xl z-10 text-xs">
@@ -59,6 +59,7 @@
             </div>
             <div class="flex-1 overflow-y-auto py-2 space-y-1">
                 <button onclick="toggleSidebar(); switchView('pos')" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-gray-200 font-medium"><span>🛒</span> New Order / POS</button>
+                <button onclick="toggleSidebar(); openMenuEditor();" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-amber-400 font-bold bg-gray-800/50"><span>✏️</span> Edit Item / All Menu</button>
                 <button onclick="toggleSidebar(); switchView('dashboard')" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-gray-200 font-medium"><span>📊</span> Dashboard</button>
                 <button onclick="toggleSidebar(); switchView('reports')" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-gray-200 font-medium"><span>📈</span> Sale Reports</button>
                 <button onclick="toggleSidebar(); switchView('tables')" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-gray-200 font-medium"><span>🪑</span> Running Tables</button>
@@ -264,16 +265,13 @@
         <div id="kotNote" style="font-size:11px; margin-top:8px; font-weight:bold;"></div>
     </div>
 
-    <!-- Settings Modal (With Edit Item / All Menu Button) -->
+    <!-- Settings Modal -->
     <div id="settingsModal" style="display: none;" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
         <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-sm space-y-3">
             <h3 class="font-bold text-base text-amber-400">⚙️ Restaurant Settings</h3>
             <div>
                 <label class="text-xs text-gray-400 block mb-1">Restaurant Name</label>
                 <input type="text" id="settingShopName" value="RJ Restaurant" class="w-full bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
-            </div>
-            <div>
-                <button type="button" onclick="closeSettings(); openMenuEditor();" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-xs font-bold shadow">✏️ Edit Item / All Menu</button>
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="closeSettings()" class="bg-gray-700 px-3 py-1.5 rounded text-xs font-bold">Cancel</button>
@@ -286,7 +284,7 @@
     <div id="menuEditorModal" style="display: none;" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
         <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-md max-h-[85vh] flex flex-col space-y-3">
             <div class="flex justify-between items-center border-b border-gray-800 pb-2">
-                <h3 class="font-bold text-base text-amber-400">🍽️ Edit All Menu Items & Prices</h3>
+                <h3 class="font-bold text-base text-amber-400">✏️ Edit All Menu Items & Prices</h3>
                 <button onclick="closeMenuEditor()" class="text-gray-400 font-bold text-sm px-2">✕</button>
             </div>
             <div class="flex gap-2">
@@ -600,7 +598,7 @@
             document.getElementById('receiptItemsList').innerHTML = receiptHTML;
             document.getElementById('receiptTotals').innerHTML = `
                 <div style="display:flex; justify-content:space-between;"><span>Sub Total:</span><span>₹${sub}</span></div>
-                ${discountPercent > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Discount (${discountPercent}%):</span><span>-₹${Math.round(discountAmount)}</span></div>` : ''}
+                ${discountPercent > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Discount (${discountPercent}\%):</span><span>-₹${Math.round(discountAmount)}</span></div>` : ''}
                 <div style="display:flex; justify-content:space-between;"><span>GST (5%):</span><span>₹${tax}</span></div>
                 <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:5px; border-top:1px solid black; padding-top:5px;"><span>Grand Total:</span><span>₹${grand}</span></div>
                 <div style="font-size:11px; margin-top:5px;">Payment Mode: ${selectedPayment}</div>
@@ -691,53 +689,3 @@
 
         function closeMenuEditor() {
             document.getElementById('menuEditorModal').style.display = 'none';
-            renderItems(menuItems);
-            showToast('मेनू अपडेट हो गया!');
-        }
-
-        function renderEditableMenu() {
-            const list = document.getElementById('editableMenuList');
-            list.innerHTML = menuItems.map((item, idx) => `
-                <div class="flex items-center gap-2 bg-gray-800 p-2 rounded text-xs">
-                    <input type="text" value="${item.name}" onchange="updateMenuName(${idx}, this.value)" class="flex-1 bg-gray-900 border border-gray-700 p-1 rounded text-white outline-none">
-                    <input type="number" value="${item.price}" onchange="updateMenuPrice(${idx}, this.value)" class="w-16 bg-gray-900 border border-gray-700 p-1 rounded text-white text-right outline-none">
-                    <button onclick="deleteMenuItem(${idx})" class="text-red-400 font-bold px-1.5">✕</button>
-                </div>
-            `).join('');
-        }
-
-        function updateMenuName(idx, val) {
-            menuItems[idx].name = val;
-            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
-        }
-
-        function updateMenuPrice(idx, val) {
-            menuItems[idx].price = parseFloat(val) || 0;
-            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
-        }
-
-        function deleteMenuItem(idx) {
-            menuItems.splice(idx, 1);
-            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
-            renderEditableMenu();
-        }
-
-        function addNewMenuItem() {
-            let name = document.getElementById('newItmName').value.trim();
-            let price = parseFloat(document.getElementById('newItmPrice').value) || 0;
-            if(!name) {
-                showToast('आइटम का नाम लिखें!', true);
-                return;
-            }
-            menuItems.push({ name, price, category: "Others", tag: "Veg" });
-            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
-            document.getElementById('newItmName').value = '';
-            document.getElementById('newItmPrice').value = '';
-            renderEditableMenu();
-            showToast('नया आइटम जुड़ गया!');
-        }
-
-        renderItems(menuItems);
-    </script>
-</body>
-</html>
