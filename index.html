@@ -13,16 +13,13 @@
 body{font-size:12px}
 button{touch-action:manipulation}
 #receipt,#kot{display:none}
-
 @media print{
 body *{visibility:hidden!important}
 #receipt.printing,#receipt.printing *,
 #kot.printing,#kot.printing *{visibility:visible!important}
 #receipt.printing,#kot.printing{
-display:block!important;
-position:absolute;top:0;left:0;
-width:100%;padding:12px;
-background:white;color:black;font:12px monospace
+display:block!important;position:absolute;top:0;left:0;
+width:100%;padding:12px;background:white;color:black;font:12px monospace
 }
 }
 </style>
@@ -86,19 +83,14 @@ background:white;color:black;font:12px monospace
 <input id="note" class="bg-gray-800 p-2 rounded my-2" placeholder="Note / Special instruction">
 
 <div class="space-y-1 border-t border-gray-700 pt-2">
-
-<div class="flex justify-between">
-<span>Subtotal</span><b id="subtotal">₹0</b>
-</div>
+<div class="flex justify-between"><span>Subtotal</span><b id="subtotal">₹0</b></div>
 
 <div class="flex justify-between items-center">
 <span>Discount (%)</span>
 <input id="discount" type="number" value="0" min="0" max="100" class="w-16 bg-gray-800 p-1 text-right" oninput="totals()">
 </div>
 
-<div class="flex justify-between">
-<span>GST 5%</span><b id="tax">₹0</b>
-</div>
+<div class="flex justify-between"><span>GST 5%</span><b id="tax">₹0</b></div>
 
 <div class="flex justify-between bg-gray-800 p-2 rounded text-base">
 <b>Total</b><b id="grand" class="text-amber-400">₹0</b>
@@ -197,7 +189,6 @@ background:white;color:black;font:12px monospace
 </div>
 
 <script>
-// FIREBASE CONFIG
 const firebaseConfig={
 apiKey:"AIzaSyDM06RpXjspQnYx5uD_JKwnkQDvffJMRy4",
 databaseURL:"https://rj-billing-app-default-rtdb.firebaseio.com/",
@@ -246,9 +237,7 @@ s.textContent=t;
 s.className='text-center mt-2 '+(err?'text-red-400':'text-emerald-400');
 }
 
-function drawer(){
-document.getElementById('drawerBox').classList.toggle('hidden');
-}
+function drawer(){document.getElementById('drawerBox').classList.toggle('hidden')}
 
 function go(v){
 ['pos','dashboard','reports','tables'].forEach(x=>document.getElementById(x).classList.add('hidden'));
@@ -265,18 +254,18 @@ document.getElementById('billTab').className=t==='billing'?'bg-red-600 p-2 round
 if(t==='billing')historyLoad();
 }
 
+function esc(s){
+return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function renderMenu(){
 let q=document.getElementById('search').value.toLowerCase();
 let arr=menu.filter(x=>x.name.toLowerCase().includes(q)&&(category==='all'||x.tag===category));
 document.getElementById('menuList').innerHTML=arr.map(x=>
 `<div class="flex justify-between items-center bg-gray-800 p-2 rounded">
 <div><b>${esc(x.name)}</b><p class="text-amber-400">${money(x.price)}</p></div>
-<button class="bg-emerald-600 p-2 rounded" onclick="addItem('${esc(x.name)}',${Number(x.price)})">ADD</button>
+<button class="bg-emerald-600 p-2 rounded" onclick="addItem(${JSON.stringify(x.name).replace(/"/g,'&quot;')},${Number(x.price)})">ADD</button>
 </div>`).join('')||'<p>No items found</p>';
-}
-
-function esc(s){
-return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 function addItem(n,p){
@@ -324,6 +313,7 @@ document.getElementById(x.toLowerCase()).className=
 (pay===x?'bg-emerald-600':'bg-gray-700')+' p-2 rounded');
 }
 
+/* FIXED SAVE BUTTON */
 async function saveBill(){
 if(!cart.length){
 msg('ऑर्डर खाली है! पहले item जोड़ें।',true);
@@ -333,13 +323,14 @@ if(!db){
 msg('Firebase initialize नहीं हुआ।',true);
 return;
 }
-let b=document.getElementById('saveBtn');
+
+const b=document.getElementById('saveBtn');
 b.disabled=true;
 b.textContent='Saving…';
-let t=totals();
 
-let data={
-token,
+const t=totals();
+const data={
+token:token,
 items:cart.map(x=>({...x})),
 subtotal:t.sub,
 discountPercent:t.dp,
@@ -353,17 +344,21 @@ timestamp:Date.now()
 };
 
 try{
-await db.ref('orders').push(data);
-msg('बिल Firebase में सेव हो गया ✓');
+const ref=await db.ref('orders').push(data);
+if(!ref.key)throw new Error('Firebase ने बिल ID नहीं दी');
+
+msg('बिल सेव हो गया ✓');
 cart=[];
 document.getElementById('note').value='';
 document.getElementById('discount').value=0;
 token++;
 localStorage.setItem('rj_token_no',token);
 drawCart();
+
 }catch(e){
-msg('Save Error: '+e.message,true);
-console.error(e);
+console.error('SAVE ERROR:',e);
+msg('SAVE नहीं हुआ: '+(e.message||e.code||e),true);
+alert('Bill Save Error:\n'+(e.message||e.code||e));
 }finally{
 b.disabled=false;
 b.textContent='SAVE';
@@ -381,7 +376,6 @@ let grand=order?order.total:t.grand;
 
 document.getElementById('rShop').textContent=order?.shopName||shop;
 document.getElementById('rToken').textContent='#'+(order?.token||token);
-
 document.getElementById('rItems').innerHTML=items.map(i=>
 `<div style="display:flex;justify-content:space-between;margin:4px 0">
 <span>${esc(i.name)} ×${i.qty}</span><span>${money(i.price*i.qty)}</span>
@@ -396,10 +390,7 @@ ${dp?`<p>Discount (${dp}%): -${money(disc)}</p>`:''}
 }
 
 function printBill(){
-if(!cart.length){
-msg('ऑर्डर खाली है!',true);
-return;
-}
+if(!cart.length){msg('ऑर्डर खाली है!',true);return}
 receiptData();
 printEl('receipt');
 }
@@ -413,10 +404,7 @@ setTimeout(()=>el.classList.remove('printing'),1500);
 }
 
 function printKot(){
-if(!cart.length){
-msg('ऑर्डर खाली है!',true);
-return;
-}
+if(!cart.length){msg('ऑर्डर खाली है!',true);return}
 document.getElementById('kToken').textContent='#'+token;
 document.getElementById('kTime').textContent=new Date().toLocaleString();
 document.getElementById('kItems').innerHTML=cart.map(x=>
@@ -441,9 +429,7 @@ h.innerHTML=a.map(([k,o])=>
 </div>
 <button class="bg-blue-600 p-2 rounded" onclick="duplicate('${k}')">Duplicate Print</button>
 </div>`).join('')||'No saved bills';
-}catch(e){
-h.textContent='Firebase Error: '+e.message;
-}
+}catch(e){h.textContent='Firebase Error: '+e.message}
 }
 
 function duplicate(k){
@@ -463,18 +449,14 @@ let sum=tod.reduce((n,o)=>n+(+o.total||0),0);
 document.getElementById('dash').textContent=`Today sales: ${money(sum)} | Orders: ${tod.length}`;
 document.getElementById('report').textContent=
 `Today's Sale: ${money(sum)} | Total Sale: ${money(a.reduce((n,o)=>n+(+o.total||0),0))} | Total Orders: ${a.length}`;
-}catch(e){
-document.getElementById('report').textContent='Firebase: '+e.message;
-}
+}catch(e){document.getElementById('report').textContent='Firebase: '+e.message}
 }
 
 function settingsOpen(){
 document.getElementById('shopName').value=shop;
 document.getElementById('settings').classList.remove('hidden');
 }
-function settingsClose(){
-document.getElementById('settings').classList.add('hidden');
-}
+function settingsClose(){document.getElementById('settings').classList.add('hidden')}
 function settingsSave(){
 shop=document.getElementById('shopName').value.trim()||'RJ Restaurant';
 localStorage.setItem('rj_shop_name',shop);
@@ -500,9 +482,7 @@ document.getElementById('newName').value='';
 document.getElementById('newPrice').value='';
 editMenuRender();
 }
-function menuSave(){
-localStorage.setItem('rj_menu_items',JSON.stringify(menu));
-}
+function menuSave(){localStorage.setItem('rj_menu_items',JSON.stringify(menu))}
 function editMenuRender(){
 document.getElementById('editMenu').innerHTML=menu.map((x,i)=>
 `<div class="flex gap-1">
