@@ -470,7 +470,6 @@
                         currentOrder = [];
                         updateOrderUI();
                         document.getElementById('orderNote').value = '';
-                        // Increment Token Number for next order
                         tokenNumber++;
                         localStorage.setItem('rj_token_no', tokenNumber);
                         document.getElementById('tokenNoDisplay').innerText = '#' + tokenNumber;
