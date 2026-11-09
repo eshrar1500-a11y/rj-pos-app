@@ -40,9 +40,9 @@
             </div>
             <span id="shopNameHeader" class="font-bold text-sm text-gray-200">New Order & Billing</span>
         </div>
-        <div class="flex items-center gap-3 text-gray-300 text-sm">
+        <div class="flex items-center gap-2 text-gray-300 text-sm">
             <span>🔔</span>
-            <span id="topSettingsBtn" onclick="openSettings()" class="cursor-pointer text-base p-1">⚙️</span>
+            <button type="button" onclick="openSettings()" class="bg-gray-800 hover:bg-gray-700 p-1.5 rounded text-base cursor-pointer border border-gray-700">⚙️</button>
         </div>
     </header>
 
@@ -205,7 +205,7 @@
         <button type="button" class="text-red-500 flex flex-col items-center gap-0.5 p-1"><span>🛒</span> New Order</button>
         <button type="button" onclick="showToast('Running Tables feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>🪑</span> Tables</button>
         <button type="button" onclick="showToast('Reports feature coming soon')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>📊</span> Reports</button>
-        <button type="button" id="footerSettingsBtn" onclick="openSettings()" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>⚙️</span> Settings</button>
+        <button type="button" onclick="openSettings()" class="text-gray-400 flex flex-col items-center gap-0.5 p-1"><span>⚙️</span> Settings</button>
     </footer>
 
     <!-- Firebase SDK Module Setup -->
@@ -403,7 +403,7 @@
                 let total = item.price * item.qty;
                 sub += total;
                 receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                    <span>${item.name} (x${item.qty})</span>
+                    <span>${item.name} (${item.qty})</span>
                     <span>₹${total}</span>
                 </div>`;
             });
