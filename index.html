@@ -1,778 +1,521 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RJ Restaurant POS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <style>
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
-        button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>RJ Restaurant POS</title>
 
-        #hiddenReceipt, #hiddenKOT { display: none; }
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-        @media print {
-            body * { display: none !important; }
-            #hiddenReceipt.printing, #hiddenReceipt.printing * { display: block !important; }
-            #hiddenKOT.printing, #hiddenKOT.printing * { display: block !important; }
-            #hiddenReceipt.printing, #hiddenKOT.printing {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                font-family: monospace;
-                color: black;
-                background: white;
-                padding: 10px;
-            }
-        }
-    </style>
+<style>
+body{font-size:12px}
+button{touch-action:manipulation}
+#receipt,#kot{display:none}
+
+@media print{
+body *{visibility:hidden!important}
+#receipt.printing,#receipt.printing *,
+#kot.printing,#kot.printing *{visibility:visible!important}
+#receipt.printing,#kot.printing{
+display:block!important;
+position:absolute;top:0;left:0;
+width:100%;padding:12px;
+background:white;color:black;font:12px monospace
+}
+}
+</style>
 </head>
-<body class="bg-gray-950 text-white h-screen flex flex-col overflow-hidden text-xs font-sans">
-    
-    <!-- Top Header -->
-    <header class="bg-gray-900 border-b border-gray-800 px-3 py-2 flex justify-between items-center shrink-0">
-        <div class="flex items-center gap-2">
-            <button type="button" onclick="toggleSidebar()" class="text-gray-300 text-base p-1 cursor-pointer">☰</button>
-            <div class="bg-white text-gray-950 font-black px-2 py-0.5 rounded text-sm tracking-wider flex items-center gap-0.5 shadow">
-                <span class="text-red-600">R</span>J
-            </div>
-            <span id="shopNameHeader" class="font-bold text-sm text-gray-200">New Order & Billing</span>
-        </div>
-        <div class="flex items-center gap-2 text-gray-300 text-sm">
-            <span>🔔</span>
-            <button type="button" onclick="openSettings()" class="bg-gray-800 hover:bg-gray-700 p-1.5 rounded text-base cursor-pointer border border-gray-700">⚙️</button>
-        </div>
-    </header>
-
-    <!-- Side Menu Drawer -->
-    <div id="sideDrawer" style="display: none;" class="fixed inset-0 z-50 flex">
-        <div onclick="toggleSidebar()" class="fixed inset-0 bg-black/70"></div>
-        <div class="relative bg-gray-900 w-64 h-full border-r border-gray-800 flex flex-col shadow-2xl z-10 text-xs">
-            <div class="p-4 bg-gray-950 border-b border-gray-800 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center font-bold text-white text-base">RJ</div>
-                <div>
-                    <h3 id="drawerShopName" class="font-bold text-sm text-white">RJ Restaurant</h3>
-                    <p class="text-[10px] text-gray-400">Admin POS</p>
-                </div>
-            </div>
-            <div class="flex-1 overflow-y-auto py-2 space-y-1">
-                <button onclick="toggleSidebar(); switchMainTab('newOrder')" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-gray-200 font-medium"><span>🛒</span> New Order / POS</button>
-                <button onclick="toggleSidebar(); openMenuEditor();" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-amber-400 font-bold bg-gray-800/50"><span>✏️</span> Edit Item / All Menu</button>
-                <button onclick="toggleSidebar(); switchView('dashboard')" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-gray-200 font-medium"><span>📊</span> Dashboard</button>
-                <button onclick="toggleSidebar(); switchView('reports')" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-gray-200 font-medium"><span>📈</span> Sale Reports</button>
-                <button onclick="toggleSidebar(); switchView('tables')" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-gray-200 font-medium"><span>🪑</span> Running Tables</button>
-                <button onclick="toggleSidebar(); openSettings();" class="w-full text-left px-4 py-3 hover:bg-gray-800 flex items-center gap-3 text-gray-200 font-medium"><span>🏪</span> Restaurant Settings</button>
-            </div>
-            <div class="p-3 border-t border-gray-800 text-center text-gray-500 text-[10px]">
-                RJ POS v1.0.0
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Workspace Area -->
-    <div id="mainWorkspace" class="flex-1 flex flex-col overflow-hidden bg-gray-950">
-        
-        <!-- Default POS View -->
-        <div id="view-pos" class="flex-1 flex flex-col overflow-hidden bg-gray-950">
-            
-            <!-- Top Tabs (New Order / Billing) -->
-            <div class="grid grid-cols-2 bg-gray-900 border-b border-gray-800 font-bold text-center text-xs shrink-0 p-1">
-                <button type="button" id="tabNewOrder" onclick="switchMainTab('newOrder')" class="bg-red-600 text-white py-1.5 rounded transition">New Order</button>
-                <button type="button" id="tabBilling" onclick="switchMainTab('billing')" class="text-gray-400 py-1.5 rounded hover:text-white transition">Billing (Saved Bills & Duplicate)</button>
-            </div>
-
-            <!-- Section 1: New Order Workspace -->
-            <div id="sectionNewOrder" class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-1 p-1.5 overflow-hidden bg-gray-950">
-                <!-- Left: Catalog -->
-                <div class="md:col-span-7 grid grid-cols-12 gap-1 bg-gray-900 p-1.5 rounded-lg border border-gray-800 overflow-hidden">
-                    <div class="col-span-3 overflow-y-auto space-y-1 pr-1 border-r border-gray-800 text-center">
-                        <button type="button" onclick="filterCategory('all')" class="w-full bg-red-600 text-white p-2 rounded-md font-medium flex flex-col items-center gap-0.5 text-[10px] shadow">
-                            <span class="text-sm">🍽️</span> All
-                        </button>
-                        <button type="button" onclick="filterCategory('Starters')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍗</span> Starters</button>
-                        <button type="button" onclick="filterCategory('Soups')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🥣</span> Soups</button>
-                        <button type="button" onclick="filterCategory('Indian Breads')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🫓</span> Breads</button>
-                        <button type="button" onclick="filterCategory('Rice & Biryani')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍚</span> Biryani</button>
-                        <button type="button" onclick="filterCategory('Pizza')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍕</span> Pizza</button>
-                        <button type="button" onclick="filterCategory('South Indian')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🥘</span> South Indian</button>
-                        <button type="button" onclick="filterCategory('Ice Cream')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍨</span> Ice Cream</button>
-                        <button type="button" onclick="filterCategory('Beverages')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🥤</span> Beverages</button>
-                        <button type="button" onclick="filterCategory('Desserts')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>🍰</span> Desserts</button>
-                        <button type="button" onclick="filterCategory('Combo')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>👑</span> Combo</button>
-                        <button type="button" onclick="filterCategory('Others')" class="w-full bg-gray-800 text-gray-300 p-1.5 rounded-md hover:bg-gray-700 flex flex-col items-center gap-0.5 text-[10px]"><span>⋯</span> Others</button>
-                    </div>
-
-                    <div class="col-span-9 flex flex-col gap-2 overflow-hidden pl-1">
-                        <input type="text" id="searchBox" onkeyup="handleSearch()" placeholder="🔍 Search item..." class="bg-gray-800 border border-gray-700 px-2.5 py-1.5 rounded-md text-white outline-none focus:border-red-500 text-xs">
-                        
-                        <div class="flex gap-1 overflow-x-auto pb-1 shrink-0 text-[10px]">
-                            <button type="button" onclick="filterTag('all')" class="bg-red-600 px-2.5 py-0.5 rounded-full whitespace-nowrap font-medium">All</button>
-                            <button type="button" onclick="filterTag('Veg')" class="bg-gray-800 text-gray-300 px-2.5 py-0.5 rounded-full whitespace-nowrap">Veg</button>
-                            <button type="button" onclick="filterTag('Non-Veg')" class="bg-gray-800 text-gray-300 px-2.5 py-0.5 rounded-full whitespace-nowrap">Non-Veg</button>
-                            <button type="button" onclick="filterTag('Beverages')" class="bg-gray-800 text-gray-300 px-2.5 py-0.5 rounded-full whitespace-nowrap">Beverages</button>
-                        </div>
-
-                        <div id="itemList" class="flex-1 overflow-y-auto space-y-1.5 pr-1"></div>
-                    </div>
-                </div>
-
-                <!-- Right: Active Bill Panel -->
-                <div class="md:col-span-5 bg-gray-900 p-2 rounded-lg border border-gray-800 flex flex-col justify-between overflow-hidden relative">
-                    <div id="toast" class="absolute top-2 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-3 py-1 rounded shadow-lg text-[11px] font-bold opacity-0 transition-opacity duration-300 pointer-events-none z-50"></div>
-
-                    <div>
-                        <div class="grid grid-cols-2 bg-gray-800/80 border border-gray-700 rounded-md p-1.5 mb-2 text-center">
-                            <div class="border-r border-gray-700">
-                                <span class="text-[9px] text-gray-400 block">Token No.</span>
-                                <span id="tokenNoDisplay" class="font-black text-sm text-amber-400">#1</span>
-                            </div>
-                            <div>
-                                <span class="text-[9px] text-gray-400 block">Persons</span>
-                                <span class="font-black text-sm text-amber-400">👥 2</span>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-between text-[10px] font-bold text-gray-400 border-b border-gray-800 pb-1 px-1 mb-1">
-                            <span>Item Name</span>
-                            <div class="flex gap-4">
-                                <span>Qty</span>
-                                <span>Price</span>
-                                <span>Total</span>
-                            </div>
-                        </div>
-                        
-                        <div id="orderList" class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                            <p class="text-gray-500 text-center py-4">No items added yet.</p>
-                        </div>
-
-                        <input type="text" id="orderNote" placeholder="Note / Special Instruction (Optional)..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-300 mt-2 outline-none">
-                    </div>
-
-                    <div class="border-t border-gray-800 pt-2 space-y-1.5 shrink-0 pb-8">
-                        <div class="flex justify-between text-gray-400 text-xs">
-                            <span>Sub Total</span>
-                            <span id="subTotal" class="text-white font-semibold">₹0</span>
-                        </div>
-                        <div class="flex justify-between text-gray-400 text-xs items-center">
-                            <span>Discount (%)</span>
-                            <input type="number" id="discountInput" value="0" oninput="updateOrderUI()" class="w-14 bg-gray-800 border border-gray-700 px-1 py-0.5 rounded text-right text-white outline-none">
-                        </div>
-                        <div class="flex justify-between text-gray-400 text-xs">
-                            <span>Tax (GST 5%)</span>
-                            <span id="taxAmount" class="text-white font-semibold">₹0</span>
-                        </div>
-                        <div class="flex justify-between font-black text-sm bg-gray-800 px-2.5 py-1 rounded border border-gray-700">
-                            <span>Total</span>
-                            <span id="grandTotal" class="text-amber-400 text-base">₹0</span>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-1 pt-1">
-                            <button type="button" onclick="setPaymentMode('Cash')" id="pay-Cash" class="bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs cursor-pointer">💵 Cash</button>
-                            <button type="button" onclick="setPaymentMode('Card')" id="pay-Card" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs cursor-pointer">💳 Card</button>
-                            <button type="button" onclick="setPaymentMode('Due')" id="pay-Due" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs cursor-pointer">👤 Due</button>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-1 pt-1">
-                            <button type="button" onclick="saveOrder()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded font-bold shadow text-sm cursor-pointer">SAVE</button>
-                            <button type="button" onclick="printCustomerBill()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold shadow text-sm cursor-pointer">PRINT</button>
-                            <button type="button" onclick="printKOT()" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded font-bold shadow text-sm cursor-pointer">KOT</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 2: Billing Tab View (Saved Bills & Duplicate Print) -->
-            <div id="sectionBilling" class="flex-1 p-4 overflow-y-auto hidden bg-gray-950 text-white">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-amber-400">🧾 Saved Bills & Duplicate Print</h2>
-                    <button type="button" onclick="loadBillingHistory()" class="bg-blue-600 px-3 py-1.5 rounded text-xs font-bold shadow cursor-pointer">Refresh List</button>
-                </div>
-                <div id="billingHistoryContainer" class="space-y-3">
-                    <p class="text-gray-400 text-xs">Loading saved bills from Firebase...</p>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Dashboard View -->
-        <div id="view-dashboard" class="flex-1 p-4 overflow-y-auto hidden bg-gray-950 text-white">
-            <h2 class="text-lg font-bold mb-4 text-amber-400">📊 Restaurant Dashboard</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div class="bg-gray-900 p-3 rounded border border-gray-800">
-                    <p class="text-gray-400 text-[10px]">Today's Sales</p>
-                    <p id="dashTotalSales" class="text-lg font-bold text-emerald-400">₹0</p>
-                </div>
-                <div class="bg-gray-900 p-3 rounded border border-gray-800">
-                    <p class="text-gray-400 text-[10px]">Total Orders</p>
-                    <p id="dashTotalOrders" class="text-lg font-bold text-blue-400">0</p>
-                </div>
-            </div>
-            <button type="button" onclick="switchView('pos')" class="bg-red-600 px-4 py-2 rounded font-bold text-xs cursor-pointer">← Back to New Order</button>
-        </div>
-
-        <!-- Sale Reports View -->
-        <div id="view-reports" class="flex-1 p-4 overflow-y-auto hidden bg-gray-950 text-white">
-            <h2 class="text-lg font-bold mb-4 text-amber-400">📈 Sale Reports</h2>
-            <div class="bg-gray-900 p-4 rounded border border-gray-800 mb-4">
-                <div id="reportsContent" class="space-y-2 text-xs text-gray-300">
-                    <p>Loading reports...</p>
-                </div>
-            </div>
-            <button type="button" onclick="switchView('pos')" class="bg-red-600 px-4 py-2 rounded font-bold text-xs cursor-pointer">← Back to New Order</button>
-        </div>
-
-        <!-- Running Tables View -->
-        <div id="view-tables" class="flex-1 p-4 overflow-y-auto hidden bg-gray-950 text-white">
-            <h2 class="text-lg font-bold mb-4 text-amber-400">🪑 Running Tables</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div class="bg-amber-600/20 border border-amber-500 p-4 rounded text-center">
-                    <p class="font-bold text-sm text-amber-400">Table T3</p>
-                    <p class="text-xs text-gray-300 mt-1">Status: Occupied</p>
-                </div>
-            </div>
-            <button type="button" onclick="switchView('pos')" class="bg-red-600 px-4 py-2 rounded font-bold text-xs cursor-pointer">← Back to New Order</button>
-        </div>
-
-    </div>
-
-    <!-- Hidden Customer Bill Receipt -->
-    <div id="hiddenReceipt">
-        <h2 id="receiptShopName" style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">RJ RESTAURANT</h2>
-        <p style="text-align:center; font-size:11px; margin-bottom:4px;">CUSTOMER BILL</p>
-        <div style="font-size:11px; margin-bottom:6px;">Token: <span id="receiptToken"></span> | Persons: 2</div>
-        <hr style="border-top:1px dashed black; margin-bottom:8px;">
-        <div id="receiptItemsList"></div>
-        <hr style="border-top:1px dashed black; margin:8px 0;">
-        <div id="receiptTotals" style="font-size:12px; font-weight:bold;"></div>
-        <p style="text-align:center; font-size:10px; margin-top:12px;">Thank You! Visit Again.</p>
-    </div>
-
-    <!-- Hidden KOT Receipt -->
-    <div id="hiddenKOT">
-        <h2 style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:2px;">KITCHEN ORDER TICKET</h2>
-        <div style="font-size:11px; margin-bottom:6px;">Token: <span id="kotToken"></span> | Time: <span id="kotTime"></span></div>
-        <hr style="border-top:1px dashed black; margin-bottom:8px;">
-        <div id="kotItemsList"></div>
-        <div id="kotNote" style="font-size:11px; margin-top:8px; font-weight:bold;"></div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" style="display: none;" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-sm space-y-3">
-            <h3 class="font-bold text-base text-amber-400">⚙️ Restaurant Settings</h3>
-            <div>
-                <label class="text-xs text-gray-400 block mb-1">Restaurant Name</label>
-                <input type="text" id="settingShopName" value="RJ Restaurant" class="w-full bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeSettings()" class="bg-gray-700 px-3 py-1.5 rounded text-xs font-bold cursor-pointer">Cancel</button>
-                <button type="button" onclick="saveSettings()" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold cursor-pointer">Save</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Menu Editor Modal -->
-    <div id="menuEditorModal" style="display: none;" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-md max-h-[85vh] flex flex-col space-y-3">
-            <div class="flex justify-between items-center border-b border-gray-800 pb-2">
-                <h3 class="font-bold text-base text-amber-400">✏️ Edit All Menu Items & Prices</h3>
-                <button type="button" onclick="closeMenuEditor()" class="text-gray-400 font-bold text-sm px-2 cursor-pointer">✕</button>
-            </div>
-            <div class="flex gap-2">
-                <input type="text" id="newItmName" placeholder="Item Name" class="flex-1 bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
-                <input type="number" id="newItmPrice" placeholder="Price ₹" class="w-20 bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
-                <button type="button" onclick="addNewMenuItem()" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold cursor-pointer">Add</button>
-            </div>
-            <div id="editableMenuList" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
-            <div class="flex justify-end pt-2 border-t border-gray-800">
-                <button type="button" onclick="closeMenuEditor()" class="bg-red-600 px-4 py-1.5 rounded text-xs font-bold cursor-pointer">Close & Save</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bottom Navigation Bar -->
-    <footer class="bg-gray-900 border-t border-gray-800 grid grid-cols-4 text-center py-1.5 shrink-0 text-[10px] font-medium pb-5">
-        <button type="button" onclick="switchMainTab('newOrder'); switchView('pos')" class="text-red-500 flex flex-col items-center gap-0.5 p-1 cursor-pointer"><span>🛒</span> New Order</button>
-        <button type="button" onclick="switchView('tables')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1 cursor-pointer"><span>🪑</span> Tables</button>
-        <button type="button" onclick="switchView('reports')" class="text-gray-400 flex flex-col items-center gap-0.5 p-1 cursor-pointer"><span>📊</span> Reports</button>
-        <button type="button" onclick="openSettings()" class="text-gray-400 flex flex-col items-center gap-0.5 p-1 cursor-pointer"><span>⚙️</span> Settings</button>
-    </footer>
-
-    <!-- Firebase Compat Initialization & App Logic -->
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDM06RpXjspQnYx5uD_JKwnkQDvffJMRy4",
-            databaseURL: "https://rj-billing-app-default-rtdb.firebaseio.com/",
-            projectId: "rj-billing-app",
-            storageBucket: "rj-billing-app.firebasestorage.app"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        let restaurantName = localStorage.getItem('rj_shop_name') || "RJ Restaurant";
-        document.getElementById('shopNameHeader').innerText = restaurantName;
-        const drawerShopEl = document.getElementById('drawerShopName');
-        if(drawerShopEl) drawerShopEl.innerText = restaurantName;
-
-        let tokenNumber = parseInt(localStorage.getItem('rj_token_no')) || 1;
-        const tokenDisplayEl = document.getElementById('tokenNoDisplay');
-        if(tokenDisplayEl) tokenDisplayEl.innerText = '#' + tokenNumber;
-
-        let defaultMenuItems = [
-            { name: "Chikan Shawarma", price: 100, category: "Starters", tag: "Non-Veg" },
-            { name: "Margherita Pizza", price: 180, category: "Pizza", tag: "Veg" },
-            { name: "Veg Burger", price: 120, category: "Pizza", tag: "Veg" },
-            { name: "Cold Coffee", price: 80, category: "Beverages", tag: "Beverages" },
-            { name: "French Fries", price: 60, category: "Starters", tag: "Veg" },
-            { name: "Paneer Pizza", price: 200, category: "Pizza", tag: "Veg" },
-            { name: "Chicken Biryani", price: 160, category: "Rice & Biryani", tag: "Non-Veg" },
-            { name: "Veg Pasta", price: 140, category: "Others", tag: "Veg" },
-            { name: "Chicken Roll", price: 100, category: "Starters", tag: "Non-Veg" },
-            { name: "Masala Dosa", price: 90, category: "South Indian", tag: "Veg" },
-            { name: "Ice Cream", price: 70, category: "Ice Cream", tag: "Veg" },
-            { name: "Tomato Soup", price: 60, category: "Soups", tag: "Veg" },
-            { name: "Veg Sandwich", price: 80, category: "Others", tag: "Veg" },
-            { name: "Chocolate Shake", price: 90, category: "Beverages", tag: "Beverages" },
-            { name: "Mango Shake", price: 80, category: "Beverages", tag: "Beverages" },
-            { name: "Oreo Shake", price: 100, category: "Beverages", tag: "Beverages" },
-            { name: "Hot Coffee", price: 60, category: "Beverages", tag: "Beverages" }
-        ];
-
-        let menuItems = JSON.parse(localStorage.getItem('rj_menu_items')) || defaultMenuItems;
-        let currentOrder = [];
-        let selectedPayment = "Cash";
-        let cachedOrdersData = {};
-
-        function showToast(message, isError = false) {
-            const toast = document.getElementById('toast');
-            if(!toast) return;
-            toast.innerText = message;
-            toast.className = `absolute top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded shadow-lg text-[11px] font-bold z-50 transition-opacity duration-300 ${isError ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`;
-            toast.style.opacity = '1';
-            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
-        }
-
-        function toggleSidebar() {
-            const drawer = document.getElementById('sideDrawer');
-            if(drawer) {
-                drawer.style.display = (drawer.style.display === 'none') ? 'flex' : 'none';
-            }
-        }
-
-        function switchMainTab(tab) {
-            const secNewOrder = document.getElementById('sectionNewOrder');
-            const secBilling = document.getElementById('sectionBilling');
-            const btnNewOrder = document.getElementById('tabNewOrder');
-            const btnBilling = document.getElementById('tabBilling');
-
-            if(tab === 'newOrder') {
-                if(secNewOrder) secNewOrder.classList.remove('hidden');
-                if(secBilling) secBilling.classList.add('hidden');
-                if(btnNewOrder) btnNewOrder.className = "bg-red-600 text-white py-1.5 rounded transition";
-                if(btnBilling) btnBilling.className = "text-gray-400 py-1.5 rounded hover:text-white transition";
-            } else {
-                if(secNewOrder) secNewOrder.classList.add('hidden');
-                if(secBilling) secBilling.classList.remove('hidden');
-                if(btnBilling) btnBilling.className = "bg-red-600 text-white py-1.5 rounded transition";
-                if(btnNewOrder) btnNewOrder.className = "text-gray-400 py-1.5 rounded hover:text-white transition";
-                loadBillingHistory();
-            }
-        }
-
-        function switchView(viewName) {
-            ['pos', 'dashboard', 'reports', 'tables'].forEach(v => {
-                let el = document.getElementById('view-' + v);
-                if(el) el.classList.add('hidden');
-            });
-            let target = document.getElementById('view-' + viewName);
-            if(target) target.classList.remove('hidden');
-            if(viewName === 'pos') {
-                switchMainTab('newOrder');
-            }
-        }
-
-        function loadBillingHistory() {
-            const container = document.getElementById('billingHistoryContainer');
-            if(!container) return;
-            container.innerHTML = '<p class="text-gray-400 text-xs">Fetching bills from Firebase...</p>';
-
-            db.ref('orders').once('value').then((snapshot) => {
-                cachedOrdersData = snapshot.val() || {};
-                let orders = Object.entries(cachedOrdersData);
-                let html = '';
-
-                orders.reverse().forEach(([key, ord]) => {
-                    let timeStr = new Date(ord.timestamp).toLocaleString();
-                    let itemsSummary = (ord.items || []).map(i => `${i.name} (x${i.qty})`).join(', ');
-
-                    html += `
-                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-lg flex justify-between items-center text-xs">
-                            <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="bg-amber-500/20 text-amber-400 font-black px-2 py-0.5 rounded">Token #${ord.token}</span>
-                                    <span class="font-bold text-white text-sm">${ord.total}</span>
-                                    <span class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px]">${ord.paymentMode}</span>
-                                </div>
-                                <p class="text-gray-300 text-[11px] mb-1">Items: ${itemsSummary}</p>
-                                <p class="text-[10px] text-gray-500">🕒 ${timeStr}</p>
-                            </div>
-                            <div>
-                                <button type="button" onclick="printDuplicateBill('${key}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded font-bold shadow text-xs cursor-pointer">🖨️ Duplicate Print</button>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                if(orders.length === 0) {
-                    html = '<p class="text-gray-500 text-center py-4">No bills saved yet.</p>';
-                }
-                container.innerHTML = html;
-            }).catch((err) => {
-                container.innerHTML = '<p class="text-red-500 text-xs">Error loading bills.</p>';
-            });
-        }
-
-        function printDuplicateBill(orderKey) {
-            let ord = cachedOrdersData[orderKey];
-            if(!ord) {
-                showToast('बिल डेटा नहीं मिला!', true);
-                return;
-            }
-
-            let receiptHTML = '';
-            let sub = 0;
-            (ord.items || []).forEach(item => {
-                let total = item.price * item.qty;
-                sub += total;
-                receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                    <span>${item.name} (${item.qty})</span>
-                    <span>₹${total}</span>
-                </div>`;
-            });
-
-            let tax = Math.round(sub * 0.05);
-
-            document.getElementById('receiptShopName').innerText = restaurantName;
-            document.getElementById('receiptToken').innerText = '#' + ord.token;
-            document.getElementById('receiptItemsList').innerHTML = receiptHTML;
-            document.getElementById('receiptTotals').innerHTML = `
-                <div style="display:flex; justify-content:space-between;"><span>Sub Total:</span><span>₹${sub}</span></div>
-                <div style="display:flex; justify-content:space-between;"><span>GST (5%):</span><span>₹${tax}</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:5px; border-top:1px solid black; padding-top:5px;"><span>Grand Total:</span><span>₹${ord.total}</span></div>
-                <div style="font-size:11px; margin-top:5px;">Payment Mode: ${ord.paymentMode}</div>
-            `;
-
-            const receiptEl = document.getElementById('hiddenReceipt');
-            receiptEl.classList.add('printing');
-            window.print();
-            receiptEl.classList.remove('printing');
-        }
-
-        function renderItems(items) {
-            const list = document.getElementById('itemList');
-            if(!list) return;
-            if(items.length === 0) {
-                list.innerHTML = '<p class="text-gray-500 text-center py-4">No items found.</p>';
-                return;
-            }
-            list.innerHTML = items.map(i => `
-                <div class="flex justify-between items-center bg-gray-800/70 p-2 rounded border border-gray-800">
-                    <div>
-                        <p class="font-semibold text-white">${i.name}</p>
-                        <p class="text-amber-400 font-bold">₹${i.price}</p>
-                    </div>
-                    <button type="button" onclick="addItem('${i.name}', ${i.price})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold text-xs cursor-pointer">ADD</button>
-                </div>
-            `).join('');
-        }
-
-        function filterCategory(cat) {
-            if(cat === 'all') renderItems(menuItems);
-            else renderItems(menuItems.filter(i => i.category === cat));
-        }
-
-        function filterTag(tag) {
-            if(tag === 'all') renderItems(menuItems);
-            else renderItems(menuItems.filter(i => i.tag === tag));
-        }
-
-        function handleSearch() {
-            let q = document.getElementById('searchBox').value.toLowerCase();
-            renderItems(menuItems.filter(i => i.name.toLowerCase().includes(q)));
-        }
-
-        function addItem(name, price) {
-            let item = currentOrder.find(i => i.name === name);
-            if(item) item.qty += 1;
-            else currentOrder.push({name, price, qty: 1});
-            updateOrderUI();
-        }
-
-        function changeQty(index, delta) {
-            currentOrder[index].qty += delta;
-            if(currentOrder[index].qty <= 0) currentOrder.splice(index, 1);
-            updateOrderUI();
-        }
-
-        function removeItem(index) {
-            currentOrder.splice(index, 1);
-            updateOrderUI();
-        }
-
-        function setPaymentMode(mode) {
-            selectedPayment = mode;
-            ['Cash', 'Card', 'Due'].forEach(m => {
-                let btn = document.getElementById('pay-' + m);
-                if(btn) {
-                    if(m === mode) {
-                        btn.className = "bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs cursor-pointer";
-                    } else {
-                        btn.className = "bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs cursor-pointer";
-                    }
-                }
-            });
-        }
-
-        function updateOrderUI() {
-            const list = document.getElementById('orderList');
-            const subTotalEl = document.getElementById('subTotal');
-            const taxAmountEl = document.getElementById('taxAmount');
-            const grandTotalEl = document.getElementById('grandTotal');
-
-            if(!list) return;
-
-            if(currentOrder.length === 0) {
-                list.innerHTML = '<p class="text-gray-500 text-center py-4">No items added yet.</p>';
-                if(subTotalEl) subTotalEl.innerText = '₹0'; 
-                if(taxAmountEl) taxAmountEl.innerText = '₹0'; 
-                if(grandTotalEl) grandTotalEl.innerText = '₹0';
-                return;
-            }
-            let sub = 0;
-            list.innerHTML = currentOrder.map((item, idx) => {
-                let total = item.price * item.qty;
-                sub += total;
-                return `
-                    <div class="flex justify-between items-center bg-gray-800 p-1.5 rounded text-xs">
-                        <div class="flex items-center gap-1">
-                            <button type="button" onclick="removeItem(${idx})" class="text-red-400 font-bold px-1.5 cursor-pointer">✕</button>
-                            <span class="text-gray-200 truncate w-24">${item.name}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="flex items-center bg-gray-700 rounded px-1">
-                                <button type="button" onclick="changeQty(${idx}, -1)" class="text-red-300 font-bold px-1.5 cursor-pointer">-</button>
-                                <span class="font-bold px-1.5">${item.qty}</span>
-                                <button type="button" onclick="changeQty(${idx}, 1)" class="text-emerald-300 font-bold px-1.5 cursor-pointer">+</button>
-                            </div>
-                            <span class="w-8 text-right text-gray-300">₹${item.price}</span>
-                            <span class="w-10 text-right text-amber-400 font-bold">₹${total}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            let discountInput = document.getElementById('discountInput');
-            let discountPercent = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
-            let discountAmount = (sub * discountPercent) / 100;
-            let taxable = sub - discountAmount;
-            let tax = Math.round(taxable * 0.05);
-            let grand = taxable + tax;
-
-            if(subTotalEl) subTotalEl.innerText = '₹' + sub;
-            if(taxAmountEl) taxAmountEl.innerText = '₹' + tax;
-            if(grandTotalEl) grandTotalEl.innerText = '₹' + Math.round(grand);
-        }
-
-        function printCustomerBill() {
-            if(currentOrder.length === 0) {
-                showToast('ऑर्डर खाली है!', true);
-                return;
-            }
-            let receiptHTML = '';
-            let sub = 0;
-            currentOrder.forEach(item => {
-                let total = item.price * item.qty;
-                sub += total;
-                receiptHTML += `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                    <span>${item.name} (${item.qty})</span>
-                    <span>₹${total}</span>
-                </div>`;
-            });
-
-            let discountInput = document.getElementById('discountInput');
-            let discountPercent = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
-            let discountAmount = (sub * discountPercent) / 100;
-            let taxable = sub - discountAmount;
-            let tax = Math.round(taxable * 0.05);
-            let grand = Math.round(taxable + tax);
-
-            document.getElementById('receiptShopName').innerText = restaurantName;
-            document.getElementById('receiptToken').innerText = '#' + tokenNumber;
-            document.getElementById('receiptItemsList').innerHTML = receiptHTML;
-            document.getElementById('receiptTotals').innerHTML = `
-                <div style="display:flex; justify-content:space-between;"><span>Sub Total:</span><span>₹${sub}</span></div>
-                ${discountPercent > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Discount (${discountPercent}%):</span><span>-₹${Math.round(discountAmount)}</span></div>` : ''}
-                <div style="display:flex; justify-content:space-between;"><span>GST (5%):</span><span>₹${tax}</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:5px; border-top:1px solid black; padding-top:5px;"><span>Grand Total:</span><span>₹${grand}</span></div>
-                <div style="font-size:11px; margin-top:5px;">Payment Mode: ${selectedPayment}</div>
-            `;
-
-            const receiptEl = document.getElementById('hiddenReceipt');
-            receiptEl.classList.add('printing');
-            window.print();
-            receiptEl.classList.remove('printing');
-        }
-
-        function printKOT() {
-            if(currentOrder.length === 0) {
-                showToast('ऑर्डर खाली है!', true);
-                return;
-            }
-            let kotHTML = '';
-            currentOrder.forEach(item => {
-                kotHTML += `<div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; font-weight:bold;">
-                    <span>🍽️ ${item.name}</span>
-                    <span>QTY: ${item.qty}</span>
-                </div>`;
-            });
-
-            let orderNoteEl = document.getElementById('orderNote');
-            let noteText = orderNoteEl ? orderNoteEl.value : '';
-            document.getElementById('kotToken').innerText = '#' + tokenNumber;
-            document.getElementById('kotTime').innerText = new Date().toLocaleTimeString();
-            document.getElementById('kotItemsList').innerHTML = kotHTML;
-            document.getElementById('kotNote').innerText = noteText ? "Note: " + noteText : "";
-
-            const kotEl = document.getElementById('hiddenKOT');
-            kotEl.classList.add('printing');
-            window.print();
-            kotEl.classList.remove('printing');
-        }
-
-        function saveOrder() {
-            if(currentOrder.length === 0) { 
-                showToast('ऑर्डर खाली है!', true); 
-                return; 
-            }
-            let grandTotalEl = document.getElementById('grandTotal');
-            let grandTotal = grandTotalEl ? grandTotalEl.innerText : '₹0';
-            
-            let cleanOrder = currentOrder.map(i => ({
-                name: i.name,
-                price: Number(i.price),
-                qty: Number(i.qty)
-            }));
-
-            db.ref('orders').push({
-                token: tokenNumber,
-                items: cleanOrder,
-                total: grandTotal,
-                paymentMode: selectedPayment,
-                timestamp: Date.now()
-            }).then(() => {
-                showToast('ऑर्डर Firebase पर सेव हो गया!');
-                currentOrder = [];
-                updateOrderUI();
-                let orderNoteEl = document.getElementById('orderNote');
-                if(orderNoteEl) orderNoteEl.value = '';
-                tokenNumber++;
-                localStorage.setItem('rj_token_no', tokenNumber);
-                let tokenDisplay = document.getElementById('tokenNoDisplay');
-                if(tokenDisplay) tokenDisplay.innerText = '#' + tokenNumber;
-            }).catch((err) => {
-                showToast('सेव करने में त्रुटि: ' + err.message, true);
-            });
-        }
-
-        function openSettings() {
-            let settingInput = document.getElementById('settingShopName');
-            if(settingInput) settingInput.value = restaurantName;
-            let modal = document.getElementById('settingsModal');
-            if(modal) modal.style.display = 'flex';
-        }
-
-        function closeSettings() {
-            let modal = document.getElementById('settingsModal');
-            if(modal) modal.style.display = 'none';
-        }
-
-        function saveSettings() {
-            let settingInput = document.getElementById('settingShopName');
-            let newName = settingInput ? settingInput.value.trim() : '';
-            if(newName) {
-                restaurantName = newName;
-                localStorage.setItem('rj_shop_name', restaurantName);
-                document.getElementById('shopNameHeader').innerText = restaurantName;
-                let drawerShopEl = document.getElementById('drawerShopName');
-                if(drawerShopEl) drawerShopEl.innerText = restaurantName;
-                showToast('सेटिंग्स सेव हो गई!');
-            }
-            closeSettings();
-        }
-
-        function openMenuEditor() {
-            renderEditableMenu();
-            let editorModal = document.getElementById('menuEditorModal');
-            if(editorModal) editorModal.style.display = 'flex';
-        }
-
-        function closeMenuEditor() {
-            let editorModal = document.getElementById('menuEditorModal');
-            if(editorModal) editorModal.style.display = 'none';
-            renderItems(menuItems);
-            showToast('मेनू अपडेट हो गया!');
-        }
-
-        function renderEditableMenu() {
-            const list = document.getElementById('editableMenuList');
-            if(!list) return;
-            list.innerHTML = menuItems.map((item, idx) => `
-                <div class="flex items-center gap-2 bg-gray-800 p-2 rounded text-xs">
-                    <input type="text" value="${item.name}" onchange="updateMenuName(${idx}, this.value)" class="flex-1 bg-gray-900 border border-gray-700 p-1 rounded text-white outline-none">
-                    <input type="number" value="${item.price}" onchange="updateMenuPrice(${idx}, this.value)" class="w-16 bg-gray-900 border border-gray-700 p-1 rounded text-white text-right outline-none">
-                    <button type="button" onclick="deleteMenuItem(${idx})" class="text-red-400 font-bold px-1.5 cursor-pointer">✕</button>
-                </div>
-            `).join('');
-        }
-
-        function updateMenuName(idx, val) {
-            menuItems[idx].name = val;
-            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
-        }
-
-        function updateMenuPrice(idx, val) {
-            menuItems[idx].price = parseFloat(val) || 0;
-            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
-        }
-
-        function deleteMenuItem(idx) {
-            menuItems.splice(idx, 1);
-            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
-            renderEditableMenu();
-        }
-
-        function addNewMenuItem() {
-            let nameEl = document.getElementById('newItmName');
-            let priceEl = document.getElementById('newItmPrice');
-            let name = nameEl ? nameEl.value.trim() : '';
-            let price = priceEl ? (parseFloat(priceEl.value) || 0) : 0;
-            if(!name) {
-                showToast('आइटम का नाम लिखें!', true);
-                return;
-            }
-            menuItems.push({ name, price, category: "Others", tag: "Veg" });
-            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
-            if(nameEl) nameEl.value = '';
-            if(priceEl) priceEl.value = '';
-            renderEditableMenu();
-            showToast('नया आइटम जुड़ गया!');
-        }
-
-        renderItems(menuItems);
-    </script>
+
+<body class="bg-gray-950 text-white h-screen flex flex-col overflow-hidden">
+
+<header class="bg-gray-900 border-b border-gray-800 p-3 flex justify-between">
+<div>
+<button onclick="drawer()">☰</button>
+<b class="bg-white text-black px-2 rounded">RJ</b>
+<span id="shopHead">RJ Restaurant POS</span>
+</div>
+<button onclick="settingsOpen()">⚙️</button>
+</header>
+
+<div id="drawerBox" class="hidden fixed inset-0 z-40 bg-black/70" onclick="this.classList.add('hidden')">
+<div class="bg-gray-900 w-64 h-full p-4 space-y-3" onclick="event.stopPropagation()">
+<button class="block" onclick="go('pos')">🛒 New Order</button>
+<button class="block" onclick="menuOpen()">✏️ Edit Menu</button>
+<button class="block" onclick="go('dashboard')">📊 Dashboard</button>
+<button class="block" onclick="go('reports')">📈 Reports</button>
+<button class="block" onclick="settingsOpen()">⚙️ Settings</button>
+</div>
+</div>
+
+<main class="flex-1 min-h-0 flex flex-col">
+
+<div id="pos" class="flex-1 min-h-0 flex flex-col">
+
+<div class="grid grid-cols-2 bg-gray-900 p-1">
+<button id="newTab" class="bg-red-600 p-2 rounded" onclick="tab('new')">New Order</button>
+<button id="billTab" class="p-2" onclick="tab('billing')">Billing / Saved Bills</button>
+</div>
+
+<div id="newPanel" class="flex-1 min-h-0 grid md:grid-cols-2 gap-2 p-2 overflow-auto">
+
+<section class="bg-gray-900 rounded p-2 flex flex-col min-h-0">
+<input id="search" placeholder="🔍 Search item..." class="bg-gray-800 p-2 rounded mb-2" oninput="renderMenu()">
+
+<div class="flex gap-1 flex-wrap mb-2">
+<button class="bg-gray-700 p-1 rounded" onclick="category='all';renderMenu()">All</button>
+<button class="bg-gray-700 p-1 rounded" onclick="category='Veg';renderMenu()">Veg</button>
+<button class="bg-gray-700 p-1 rounded" onclick="category='Non-Veg';renderMenu()">Non-Veg</button>
+</div>
+
+<div id="menuList" class="overflow-auto space-y-2"></div>
+</section>
+
+<section class="bg-gray-900 rounded p-2 flex flex-col min-h-0">
+
+<div class="flex justify-between mb-2">
+<b>Token <span id="token">#1</span></b>
+<span>👥 2 persons</span>
+</div>
+
+<div id="cart" class="space-y-2 overflow-auto flex-1">
+<p class="text-center text-gray-500">No items added yet.</p>
+</div>
+
+<input id="note" class="bg-gray-800 p-2 rounded my-2" placeholder="Note / Special instruction">
+
+<div class="space-y-1 border-t border-gray-700 pt-2">
+
+<div class="flex justify-between">
+<span>Subtotal</span><b id="subtotal">₹0</b>
+</div>
+
+<div class="flex justify-between items-center">
+<span>Discount (%)</span>
+<input id="discount" type="number" value="0" min="0" max="100" class="w-16 bg-gray-800 p-1 text-right" oninput="totals()">
+</div>
+
+<div class="flex justify-between">
+<span>GST 5%</span><b id="tax">₹0</b>
+</div>
+
+<div class="flex justify-between bg-gray-800 p-2 rounded text-base">
+<b>Total</b><b id="grand" class="text-amber-400">₹0</b>
+</div>
+</div>
+
+<div class="grid grid-cols-3 gap-1 my-2">
+<button id="cash" onclick="pay='Cash';payStyle()" class="bg-emerald-600 p-2 rounded">Cash</button>
+<button id="card" onclick="pay='Card';payStyle()" class="bg-gray-700 p-2 rounded">Card</button>
+<button id="due" onclick="pay='Due';payStyle()" class="bg-gray-700 p-2 rounded">Due</button>
+</div>
+
+<div class="grid grid-cols-3 gap-1">
+<button id="saveBtn" onclick="saveBill()" class="bg-emerald-600 p-3 rounded font-bold">SAVE</button>
+<button onclick="printBill()" class="bg-blue-600 p-3 rounded font-bold">PRINT</button>
+<button onclick="printKot()" class="bg-amber-600 p-3 rounded font-bold">KOT</button>
+</div>
+
+<p id="status" class="text-center mt-2 min-h-4"></p>
+</section>
+</div>
+
+<div id="billingPanel" class="hidden p-3 overflow-auto">
+<button onclick="historyLoad()" class="bg-blue-600 p-2 rounded mb-3">Refresh Bills</button>
+<div id="history" class="space-y-2"></div>
+</div>
+</div>
+
+<div id="dashboard" class="hidden p-4">
+<h2 class="text-lg text-amber-400">Dashboard</h2>
+<p id="dash"></p>
+<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
+</div>
+
+<div id="reports" class="hidden p-4">
+<h2 class="text-lg text-amber-400">Sale Reports</h2>
+<div id="report"></div>
+<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
+</div>
+
+<div id="tables" class="hidden p-4">
+<h2 class="text-lg text-amber-400">Running Tables</h2>
+<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
+</div>
+
+</main>
+
+<footer class="bg-gray-900 grid grid-cols-4 text-center p-2">
+<button onclick="go('pos')">🛒 Order</button>
+<button onclick="go('tables')">🪑 Tables</button>
+<button onclick="go('reports')">📊 Reports</button>
+<button onclick="settingsOpen()">⚙️ Settings</button>
+</footer>
+
+<div id="settings" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+<div class="bg-gray-900 p-4 rounded w-full max-w-sm">
+<h3 class="text-amber-400 font-bold mb-2">Restaurant Settings</h3>
+<input id="shopName" class="bg-gray-800 p-2 w-full rounded">
+<div class="flex justify-end gap-2 mt-3">
+<button onclick="settingsClose()" class="bg-gray-700 p-2 rounded">Cancel</button>
+<button onclick="settingsSave()" class="bg-emerald-600 p-2 rounded">Save</button>
+</div>
+</div>
+</div>
+
+<div id="menuModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3">
+<div class="bg-gray-900 p-3 rounded w-full max-w-md max-h-[90vh] flex flex-col">
+<h3 class="text-amber-400 font-bold mb-2">Edit Menu</h3>
+<div class="flex gap-1">
+<input id="newName" placeholder="Item name" class="bg-gray-800 p-2 rounded flex-1">
+<input id="newPrice" type="number" placeholder="₹" class="bg-gray-800 p-2 rounded w-20">
+<button onclick="menuAdd()" class="bg-emerald-600 p-2 rounded">Add</button>
+</div>
+<div id="editMenu" class="overflow-auto flex-1 space-y-2 my-2"></div>
+<button onclick="menuClose()" class="bg-red-600 p-2 rounded">Close</button>
+</div>
+</div>
+
+<div id="receipt">
+<h2 id="rShop" style="text-align:center;font-weight:bold;font-size:16px"></h2>
+<p style="text-align:center">CUSTOMER BILL</p>
+<p>Token: <span id="rToken"></span></p>
+<hr>
+<div id="rItems"></div>
+<hr>
+<div id="rTotals"></div>
+<p style="text-align:center;margin-top:12px">Thank You! Visit Again.</p>
+</div>
+
+<div id="kot">
+<h2 style="text-align:center;font-weight:bold">KITCHEN ORDER TICKET</h2>
+<p>Token <span id="kToken"></span> | <span id="kTime"></span></p>
+<hr>
+<div id="kItems"></div>
+<p id="kNote"></p>
+</div>
+
+<script>
+// FIREBASE CONFIG
+const firebaseConfig={
+apiKey:"AIzaSyDM06RpXjspQnYx5uD_JKwnkQDvffJMRy4",
+databaseURL:"https://rj-billing-app-default-rtdb.firebaseio.com/",
+projectId:"rj-billing-app",
+storageBucket:"rj-billing-app.firebasestorage.app"
+};
+
+let db=null;
+try{
+if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+db=firebase.database();
+}catch(e){console.error(e)}
+
+let shop=localStorage.getItem('rj_shop_name')||'RJ Restaurant';
+let token=+(localStorage.getItem('rj_token_no')||1);
+let pay='Cash',cart=[],category='all',ordersCache={};
+
+const defaultItems=[
+['Chicken Shawarma',100,'Non-Veg'],
+['Margherita Pizza',180,'Veg'],
+['Veg Burger',120,'Veg'],
+['Cold Coffee',80,'Beverages'],
+['French Fries',60,'Veg'],
+['Paneer Pizza',200,'Veg'],
+['Chicken Biryani',160,'Non-Veg'],
+['Veg Pasta',140,'Veg'],
+['Chicken Roll',100,'Non-Veg'],
+['Masala Dosa',90,'Veg'],
+['Ice Cream',70,'Veg'],
+['Tomato Soup',60,'Veg'],
+['Veg Sandwich',80,'Veg'],
+['Chocolate Shake',90,'Beverages'],
+['Mango Shake',80,'Beverages'],
+['Oreo Shake',100,'Beverages'],
+['Hot Coffee',60,'Beverages']
+];
+
+let menu=JSON.parse(localStorage.getItem('rj_menu_items')||'null')||
+defaultItems.map(x=>({name:x[0],price:x[1],tag:x[2]}));
+
+const money=n=>'₹'+Math.round(Number(n)||0);
+
+function msg(t,err=false){
+let s=document.getElementById('status');
+s.textContent=t;
+s.className='text-center mt-2 '+(err?'text-red-400':'text-emerald-400');
+}
+
+function drawer(){
+document.getElementById('drawerBox').classList.toggle('hidden');
+}
+
+function go(v){
+['pos','dashboard','reports','tables'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+document.getElementById(v).classList.remove('hidden');
+if(v==='pos')tab('new');
+if(v==='dashboard'||v==='reports')stats();
+}
+
+function tab(t){
+document.getElementById('newPanel').classList.toggle('hidden',t!=='new');
+document.getElementById('billingPanel').classList.toggle('hidden',t!=='billing');
+document.getElementById('newTab').className=t==='new'?'bg-red-600 p-2 rounded':'p-2';
+document.getElementById('billTab').className=t==='billing'?'bg-red-600 p-2 rounded':'p-2';
+if(t==='billing')historyLoad();
+}
+
+function renderMenu(){
+let q=document.getElementById('search').value.toLowerCase();
+let arr=menu.filter(x=>x.name.toLowerCase().includes(q)&&(category==='all'||x.tag===category));
+document.getElementById('menuList').innerHTML=arr.map(x=>
+`<div class="flex justify-between items-center bg-gray-800 p-2 rounded">
+<div><b>${esc(x.name)}</b><p class="text-amber-400">${money(x.price)}</p></div>
+<button class="bg-emerald-600 p-2 rounded" onclick="addItem('${esc(x.name)}',${Number(x.price)})">ADD</button>
+</div>`).join('')||'<p>No items found</p>';
+}
+
+function esc(s){
+return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function addItem(n,p){
+let x=cart.find(i=>i.name===n);
+x?x.qty++:cart.push({name:n,price:+p,qty:1});
+drawCart();
+}
+
+function qty(i,d){
+cart[i].qty+=d;
+if(cart[i].qty<1)cart.splice(i,1);
+drawCart();
+}
+
+function drawCart(){
+document.getElementById('token').textContent='#'+token;
+document.getElementById('cart').innerHTML=cart.length?
+cart.map((x,i)=>`<div class="flex justify-between items-center bg-gray-800 p-2 rounded">
+<span class="truncate flex-1">${esc(x.name)}</span>
+<button onclick="qty(${i},-1)" class="px-2 text-red-300">−</button>
+<b>${x.qty}</b>
+<button onclick="qty(${i},1)" class="px-2 text-green-300">+</button>
+<span>${money(x.price*x.qty)}</span>
+<button onclick="cart.splice(${i},1);drawCart()" class="text-red-400 ml-2">×</button>
+</div>`).join(''):
+'<p class="text-center text-gray-500 py-4">No items added yet.</p>';
+totals();
+}
+
+function totals(){
+let sub=cart.reduce((s,x)=>s+x.price*x.qty,0);
+let dp=Math.min(100,Math.max(0,+document.getElementById('discount').value||0));
+let disc=sub*dp/100;
+let tax=Math.round((sub-disc)*.05);
+let grand=Math.round(sub-disc+tax);
+document.getElementById('subtotal').textContent=money(sub);
+document.getElementById('tax').textContent=money(tax);
+document.getElementById('grand').textContent=money(grand);
+return{sub,dp,disc,tax,grand};
+}
+
+function payStyle(){
+['Cash','Card','Due'].forEach(x=>
+document.getElementById(x.toLowerCase()).className=
+(pay===x?'bg-emerald-600':'bg-gray-700')+' p-2 rounded');
+}
+
+async function saveBill(){
+if(!cart.length){
+msg('ऑर्डर खाली है! पहले item जोड़ें।',true);
+return;
+}
+if(!db){
+msg('Firebase initialize नहीं हुआ।',true);
+return;
+}
+let b=document.getElementById('saveBtn');
+b.disabled=true;
+b.textContent='Saving…';
+let t=totals();
+
+let data={
+token,
+items:cart.map(x=>({...x})),
+subtotal:t.sub,
+discountPercent:t.dp,
+discountAmount:Math.round(t.disc),
+tax:t.tax,
+total:t.grand,
+paymentMode:pay,
+note:document.getElementById('note').value||'',
+shopName:shop,
+timestamp:Date.now()
+};
+
+try{
+await db.ref('orders').push(data);
+msg('बिल Firebase में सेव हो गया ✓');
+cart=[];
+document.getElementById('note').value='';
+document.getElementById('discount').value=0;
+token++;
+localStorage.setItem('rj_token_no',token);
+drawCart();
+}catch(e){
+msg('Save Error: '+e.message,true);
+console.error(e);
+}finally{
+b.disabled=false;
+b.textContent='SAVE';
+}
+}
+
+function receiptData(order){
+let t=totals();
+let items=order?order.items:cart;
+let sub=order?order.subtotal:t.sub;
+let dp=order?order.discountPercent:t.dp;
+let disc=order?order.discountAmount:Math.round(t.disc);
+let tax=order?order.tax:t.tax;
+let grand=order?order.total:t.grand;
+
+document.getElementById('rShop').textContent=order?.shopName||shop;
+document.getElementById('rToken').textContent='#'+(order?.token||token);
+
+document.getElementById('rItems').innerHTML=items.map(i=>
+`<div style="display:flex;justify-content:space-between;margin:4px 0">
+<span>${esc(i.name)} ×${i.qty}</span><span>${money(i.price*i.qty)}</span>
+</div>`).join('');
+
+document.getElementById('rTotals').innerHTML=
+`<p>Subtotal: ${money(sub)}</p>
+${dp?`<p>Discount (${dp}%): -${money(disc)}</p>`:''}
+<p>GST 5%: ${money(tax)}</p>
+<h3 style="font-size:15px">Total: ${money(grand)}</h3>
+<p>Payment: ${order?.paymentMode||pay}</p>`;
+}
+
+function printBill(){
+if(!cart.length){
+msg('ऑर्डर खाली है!',true);
+return;
+}
+receiptData();
+printEl('receipt');
+}
+
+function printEl(id){
+let el=document.getElementById(id);
+el.classList.add('printing');
+window.addEventListener('afterprint',()=>el.classList.remove('printing'),{once:true});
+window.print();
+setTimeout(()=>el.classList.remove('printing'),1500);
+}
+
+function printKot(){
+if(!cart.length){
+msg('ऑर्डर खाली है!',true);
+return;
+}
+document.getElementById('kToken').textContent='#'+token;
+document.getElementById('kTime').textContent=new Date().toLocaleString();
+document.getElementById('kItems').innerHTML=cart.map(x=>
+`<p style="display:flex;justify-content:space-between;font-weight:bold">
+<span>${esc(x.name)}</span><span>Qty ${x.qty}</span></p>`).join('');
+document.getElementById('kNote').textContent=document.getElementById('note').value;
+printEl('kot');
+}
+
+async function historyLoad(){
+let h=document.getElementById('history');
+h.innerHTML='Loading…';
+try{
+let snap=await db.ref('orders').once('value');
+ordersCache=snap.val()||{};
+let a=Object.entries(ordersCache).reverse();
+h.innerHTML=a.map(([k,o])=>
+`<div class="bg-gray-900 p-3 rounded flex justify-between gap-2">
+<div><b>Token #${o.token}</b> ${money(o.total)}
+<p>${(o.items||[]).map(i=>esc(i.name)+' ×'+i.qty).join(', ')}</p>
+<small>${new Date(o.timestamp).toLocaleString()} | ${o.paymentMode}</small>
+</div>
+<button class="bg-blue-600 p-2 rounded" onclick="duplicate('${k}')">Duplicate Print</button>
+</div>`).join('')||'No saved bills';
+}catch(e){
+h.textContent='Firebase Error: '+e.message;
+}
+}
+
+function duplicate(k){
+let o=ordersCache[k];
+if(!o)return;
+receiptData(o);
+printEl('receipt');
+}
+
+async function stats(){
+try{
+let s=await db.ref('orders').once('value');
+let a=Object.values(s.val()||{});
+let today=new Date().toDateString();
+let tod=a.filter(o=>new Date(o.timestamp).toDateString()===today);
+let sum=tod.reduce((n,o)=>n+(+o.total||0),0);
+document.getElementById('dash').textContent=`Today sales: ${money(sum)} | Orders: ${tod.length}`;
+document.getElementById('report').textContent=
+`Today's Sale: ${money(sum)} | Total Sale: ${money(a.reduce((n,o)=>n+(+o.total||0),0))} | Total Orders: ${a.length}`;
+}catch(e){
+document.getElementById('report').textContent='Firebase: '+e.message;
+}
+}
+
+function settingsOpen(){
+document.getElementById('shopName').value=shop;
+document.getElementById('settings').classList.remove('hidden');
+}
+function settingsClose(){
+document.getElementById('settings').classList.add('hidden');
+}
+function settingsSave(){
+shop=document.getElementById('shopName').value.trim()||'RJ Restaurant';
+localStorage.setItem('rj_shop_name',shop);
+document.getElementById('shopHead').textContent=shop;
+settingsClose();
+}
+
+function menuOpen(){
+document.getElementById('menuModal').classList.remove('hidden');
+editMenuRender();
+}
+function menuClose(){
+document.getElementById('menuModal').classList.add('hidden');
+renderMenu();
+}
+function menuAdd(){
+let n=document.getElementById('newName').value.trim();
+let p=+document.getElementById('newPrice').value||0;
+if(!n)return alert('Item name लिखें');
+menu.push({name:n,price:p,tag:'Veg'});
+menuSave();
+document.getElementById('newName').value='';
+document.getElementById('newPrice').value='';
+editMenuRender();
+}
+function menuSave(){
+localStorage.setItem('rj_menu_items',JSON.stringify(menu));
+}
+function editMenuRender(){
+document.getElementById('editMenu').innerHTML=menu.map((x,i)=>
+`<div class="flex gap-1">
+<input class="bg-gray-800 p-1 rounded flex-1" value="${esc(x.name)}" onchange="menu[${i}].name=this.value;menuSave()">
+<input class="bg-gray-800 p-1 rounded w-20" type="number" value="${x.price}" onchange="menu[${i}].price=+this.value;menuSave()">
+<button onclick="menu.splice(${i},1);menuSave();editMenuRender()" class="text-red-400">×</button>
+</div>`).join('');
+}
+
+document.getElementById('shopHead').textContent=shop;
+renderMenu();
+drawCart();
+payStyle();
+</script>
 </body>
 </html>
