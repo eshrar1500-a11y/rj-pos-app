@@ -46,11 +46,9 @@
         </div>
     </header>
 
-    <!-- Side Menu Drawer (Like Petpooja) -->
+    <!-- Side Menu Drawer -->
     <div id="sideDrawer" style="display: none;" class="fixed inset-0 z-50 flex">
-        <!-- Backdrop -->
         <div onclick="toggleSidebar()" class="fixed inset-0 bg-black/70"></div>
-        <!-- Drawer Content -->
         <div class="relative bg-gray-900 w-64 h-full border-r border-gray-800 flex flex-col shadow-2xl z-10 text-xs">
             <div class="p-4 bg-gray-950 border-b border-gray-800 flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center font-bold text-white text-base">RJ</div>
@@ -73,12 +71,11 @@
         </div>
     </div>
 
-    <!-- Main Workspace Area (Dynamic Views: POS, Dashboard, Reports, Tables, Orders) -->
+    <!-- Main Workspace Area -->
     <div id="mainWorkspace" class="flex-1 flex flex-col overflow-hidden bg-gray-950">
         
         <!-- Default POS View -->
         <div id="view-pos" class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-1 p-1.5 overflow-hidden bg-gray-950">
-            <!-- Left: Categories Sidebar & Item Catalog -->
             <div class="md:col-span-7 grid grid-cols-12 gap-1 bg-gray-900 p-1.5 rounded-lg border border-gray-800 overflow-hidden">
                 <div class="col-span-3 overflow-y-auto space-y-1 pr-1 border-r border-gray-800 text-center">
                     <button type="button" onclick="filterCategory('all')" class="w-full bg-red-600 text-white p-2 rounded-md font-medium flex flex-col items-center gap-0.5 text-[10px] shadow">
@@ -267,7 +264,7 @@
         <div id="kotNote" style="font-size:11px; margin-top:8px; font-weight:bold;"></div>
     </div>
 
-    <!-- Settings Modal -->
+    <!-- Settings Modal (With Edit Item / All Menu Button) -->
     <div id="settingsModal" style="display: none;" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
         <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-sm space-y-3">
             <h3 class="font-bold text-base text-amber-400">⚙️ Restaurant Settings</h3>
@@ -275,9 +272,33 @@
                 <label class="text-xs text-gray-400 block mb-1">Restaurant Name</label>
                 <input type="text" id="settingShopName" value="RJ Restaurant" class="w-full bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
             </div>
+            <div>
+                <button type="button" onclick="closeSettings(); openMenuEditor();" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-xs font-bold shadow">✏️ Edit Item / All Menu</button>
+            </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="closeSettings()" class="bg-gray-700 px-3 py-1.5 rounded text-xs font-bold">Cancel</button>
                 <button type="button" onclick="saveSettings()" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Editor Modal (For Editing Items and Prices) -->
+    <div id="menuEditorModal" style="display: none;" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg w-full max-w-md max-h-[85vh] flex flex-col space-y-3">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                <h3 class="font-bold text-base text-amber-400">🍽️ Edit All Menu Items & Prices</h3>
+                <button onclick="closeMenuEditor()" class="text-gray-400 font-bold text-sm px-2">✕</button>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" id="newItmName" placeholder="Item Name" class="flex-1 bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
+                <input type="number" id="newItmPrice" placeholder="Price ₹" class="w-20 bg-gray-800 border border-gray-700 p-1.5 rounded text-white text-xs outline-none">
+                <button onclick="addNewMenuItem()" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold">Add</button>
+            </div>
+            <div id="editableMenuList" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                <!-- Dynamically filled items -->
+            </div>
+            <div class="flex justify-end pt-2 border-t border-gray-800">
+                <button type="button" onclick="closeMenuEditor()" class="bg-red-600 px-4 py-1.5 rounded text-xs font-bold">Close & Save</button>
             </div>
         </div>
     </div>
@@ -348,7 +369,7 @@
         let tokenNumber = parseInt(localStorage.getItem('rj_token_no')) || 1;
         document.getElementById('tokenNoDisplay').innerText = '#' + tokenNumber;
 
-        const menuItems = [
+        let defaultMenuItems = [
             { name: "Chikan Shawarma", price: 100, category: "Starters", tag: "Non-Veg" },
             { name: "Margherita Pizza", price: 180, category: "Pizza", tag: "Veg" },
             { name: "Veg Burger", price: 120, category: "Pizza", tag: "Veg" },
@@ -367,6 +388,8 @@
             { name: "Oreo Shake", price: 100, category: "Beverages", tag: "Beverages" },
             { name: "Hot Coffee", price: 60, category: "Beverages", tag: "Beverages" }
         ];
+
+        let menuItems = JSON.parse(localStorage.getItem('rj_menu_items')) || defaultMenuItems;
 
         let currentOrder = [];
         let selectedPayment = "Cash";
@@ -659,6 +682,59 @@
                 showToast('सेटिंग्स सेव हो गई!');
             }
             closeSettings();
+        }
+
+        function openMenuEditor() {
+            renderEditableMenu();
+            document.getElementById('menuEditorModal').style.display = 'flex';
+        }
+
+        function closeMenuEditor() {
+            document.getElementById('menuEditorModal').style.display = 'none';
+            renderItems(menuItems);
+            showToast('मेनू अपडेट हो गया!');
+        }
+
+        function renderEditableMenu() {
+            const list = document.getElementById('editableMenuList');
+            list.innerHTML = menuItems.map((item, idx) => `
+                <div class="flex items-center gap-2 bg-gray-800 p-2 rounded text-xs">
+                    <input type="text" value="${item.name}" onchange="updateMenuName(${idx}, this.value)" class="flex-1 bg-gray-900 border border-gray-700 p-1 rounded text-white outline-none">
+                    <input type="number" value="${item.price}" onchange="updateMenuPrice(${idx}, this.value)" class="w-16 bg-gray-900 border border-gray-700 p-1 rounded text-white text-right outline-none">
+                    <button onclick="deleteMenuItem(${idx})" class="text-red-400 font-bold px-1.5">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function updateMenuName(idx, val) {
+            menuItems[idx].name = val;
+            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
+        }
+
+        function updateMenuPrice(idx, val) {
+            menuItems[idx].price = parseFloat(val) || 0;
+            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
+        }
+
+        function deleteMenuItem(idx) {
+            menuItems.splice(idx, 1);
+            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
+            renderEditableMenu();
+        }
+
+        function addNewMenuItem() {
+            let name = document.getElementById('newItmName').value.trim();
+            let price = parseFloat(document.getElementById('newItmPrice').value) || 0;
+            if(!name) {
+                showToast('आइटम का नाम लिखें!', true);
+                return;
+            }
+            menuItems.push({ name, price, category: "Others", tag: "Veg" });
+            localStorage.setItem('rj_menu_items', JSON.stringify(menuItems));
+            document.getElementById('newItmName').value = '';
+            document.getElementById('newItmPrice').value = '';
+            renderEditableMenu();
+            showToast('नया आइटम जुड़ गया!');
         }
 
         renderItems(menuItems);
