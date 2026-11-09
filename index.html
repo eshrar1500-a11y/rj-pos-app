@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RJ Restaurant POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
@@ -169,9 +171,9 @@
                         </div>
 
                         <div class="grid grid-cols-3 gap-1 pt-1">
-                            <button type="button" onclick="setPaymentMode('Cash')" id="pay-Cash" class="bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs">💵 Cash</button>
-                            <button type="button" onclick="setPaymentMode('Card')" id="pay-Card" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">💳 Card</button>
-                            <button type="button" onclick="setPaymentMode('Due')" id="pay-Due" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs">👤 Due</button>
+                            <button type="button" onclick="setPaymentMode('Cash')" id="pay-Cash" class="bg-emerald-600 text-white py-1.5 rounded font-bold border border-emerald-500 text-center text-xs cursor-pointer">💵 Cash</button>
+                            <button type="button" onclick="setPaymentMode('Card')" id="pay-Card" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs cursor-pointer">💳 Card</button>
+                            <button type="button" onclick="setPaymentMode('Due')" id="pay-Due" class="bg-gray-800 text-gray-300 py-1.5 rounded font-bold border border-gray-700 text-center text-xs cursor-pointer">👤 Due</button>
                         </div>
 
                         <div class="grid grid-cols-3 gap-1 pt-1">
@@ -300,57 +302,17 @@
         <button type="button" onclick="openSettings()" class="text-gray-400 flex flex-col items-center gap-0.5 p-1 cursor-pointer"><span>⚙️</span> Settings</button>
     </footer>
 
-    <!-- Firebase SDK Module Setup -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
+    <!-- Firebase Compat Initialization & App Logic -->
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDM06RpXjspQnYx5uD_JKwnkQDvffJMRy4",
             databaseURL: "https://rj-billing-app-default-rtdb.firebaseio.com/",
             projectId: "rj-billing-app",
             storageBucket: "rj-billing-app.firebasestorage.app"
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        window.saveOrderToFirebase = function(currentOrder, selectedPayment, grandTotal, tokenNo, callback) {
-            const ordersRef = ref(db, 'orders');
-            let cleanOrder = currentOrder.map(i => ({
-                name: i.name,
-                price: Number(i.price),
-                qty: Number(i.qty)
-            }));
-
-            push(ordersRef, {
-                token: tokenNo,
-                items: cleanOrder,
-                total: grandTotal,
-                paymentMode: selectedPayment,
-                timestamp: Date.now()
-            }).then(() => {
-                callback(null);
-            }).catch((error) => {
-                callback(error);
-            });
-        };
-
-        window.fetchFirebaseData = function(callback) {
-            const dbRef = ref(db);
-            get(child(dbRef, 'orders')).then((snapshot) => {
-                if (snapshot.exists()) {
-                    callback(snapshot.val());
-                } else {
-                    callback({});
-                }
-            }).catch((error) => {
-                callback(null);
-            });
-        };
-    </script>
-
-    <script>
         let restaurantName = localStorage.getItem('rj_shop_name') || "RJ Restaurant";
         document.getElementById('shopNameHeader').innerText = restaurantName;
         const drawerShopEl = document.getElementById('drawerShopName');
@@ -438,40 +400,40 @@
             if(!container) return;
             container.innerHTML = '<p class="text-gray-400 text-xs">Fetching bills from Firebase...</p>';
 
-            if(typeof window.fetchFirebaseData === 'function') {
-                window.fetchFirebaseData((data) => {
-                    cachedOrdersData = data || {};
-                    let orders = Object.entries(cachedOrdersData);
-                    let html = '';
+            db.ref('orders').once('value').then((snapshot) => {
+                cachedOrdersData = snapshot.val() || {};
+                let orders = Object.entries(cachedOrdersData);
+                let html = '';
 
-                    orders.reverse().forEach(([key, ord]) => {
-                        let timeStr = new Date(ord.timestamp).toLocaleString();
-                        let itemsSummary = (ord.items || []).map(i => `${i.name} (x${i.qty})`).join(', ');
+                orders.reverse().forEach(([key, ord]) => {
+                    let timeStr = new Date(ord.timestamp).toLocaleString();
+                    let itemsSummary = (ord.items || []).map(i => `${i.name} (x${i.qty})`).join(', ');
 
-                        html += `
-                            <div class="bg-gray-900 border border-gray-800 p-3 rounded-lg flex justify-between items-center text-xs">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span class="bg-amber-500/20 text-amber-400 font-black px-2 py-0.5 rounded">Token #${ord.token}</span>
-                                        <span class="font-bold text-white text-sm">${ord.total}</span>
-                                        <span class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px]">${ord.paymentMode}</span>
-                                    </div>
-                                    <p class="text-gray-300 text-[11px] mb-1">Items: ${itemsSummary}</p>
-                                    <p class="text-[10px] text-gray-500">🕒 ${timeStr}</p>
+                    html += `
+                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-lg flex justify-between items-center text-xs">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="bg-amber-500/20 text-amber-400 font-black px-2 py-0.5 rounded">Token #${ord.token}</span>
+                                    <span class="font-bold text-white text-sm">${ord.total}</span>
+                                    <span class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px]">${ord.paymentMode}</span>
                                 </div>
-                                <div>
-                                    <button type="button" onclick="printDuplicateBill('${key}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded font-bold shadow text-xs cursor-pointer">🖨️ Duplicate Print</button>
-                                </div>
+                                <p class="text-gray-300 text-[11px] mb-1">Items: ${itemsSummary}</p>
+                                <p class="text-[10px] text-gray-500">🕒 ${timeStr}</p>
                             </div>
-                        `;
-                    });
-
-                    if(orders.length === 0) {
-                        html = '<p class="text-gray-500 text-center py-4">No bills saved yet.</p>';
-                    }
-                    container.innerHTML = html;
+                            <div>
+                                <button type="button" onclick="printDuplicateBill('${key}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded font-bold shadow text-xs cursor-pointer">🖨️ Duplicate Print</button>
+                            </div>
+                        </div>
+                    `;
                 });
-            }
+
+                if(orders.length === 0) {
+                    html = '<p class="text-gray-500 text-center py-4">No bills saved yet.</p>';
+                }
+                container.innerHTML = html;
+            }).catch((err) => {
+                container.innerHTML = '<p class="text-red-500 text-xs">Error loading bills.</p>';
+            });
         }
 
         function printDuplicateBill(orderKey) {
@@ -699,25 +661,31 @@
             let grandTotalEl = document.getElementById('grandTotal');
             let grandTotal = grandTotalEl ? grandTotalEl.innerText : '₹0';
             
-            if(typeof window.saveOrderToFirebase === 'function') {
-                window.saveOrderToFirebase(currentOrder, selectedPayment, grandTotal, tokenNumber, (err) => {
-                    if(!err) {
-                        showToast('ऑर्डर Firebase पर सेव हो गया!');
-                        currentOrder = [];
-                        updateOrderUI();
-                        let orderNoteEl = document.getElementById('orderNote');
-                        if(orderNoteEl) orderNoteEl.value = '';
-                        tokenNumber++;
-                        localStorage.setItem('rj_token_no', tokenNumber);
-                        let tokenDisplay = document.getElementById('tokenNoDisplay');
-                        if(tokenDisplay) tokenDisplay.innerText = '#' + tokenNumber;
-                    } else {
-                        showToast('सेव करने में त्रुटि!', true);
-                    }
-                });
-            } else {
-                showToast('Firebase लोड हो रहा है...', true);
-            }
+            let cleanOrder = currentOrder.map(i => ({
+                name: i.name,
+                price: Number(i.price),
+                qty: Number(i.qty)
+            }));
+
+            db.ref('orders').push({
+                token: tokenNumber,
+                items: cleanOrder,
+                total: grandTotal,
+                paymentMode: selectedPayment,
+                timestamp: Date.now()
+            }).then(() => {
+                showToast('ऑर्डर Firebase पर सेव हो गया!');
+                currentOrder = [];
+                updateOrderUI();
+                let orderNoteEl = document.getElementById('orderNote');
+                if(orderNoteEl) orderNoteEl.value = '';
+                tokenNumber++;
+                localStorage.setItem('rj_token_no', tokenNumber);
+                let tokenDisplay = document.getElementById('tokenNoDisplay');
+                if(tokenDisplay) tokenDisplay.innerText = '#' + tokenNumber;
+            }).catch((err) => {
+                showToast('सेव करने में त्रुटि: ' + err.message, true);
+            });
         }
 
         function openSettings() {
