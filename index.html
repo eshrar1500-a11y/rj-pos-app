@@ -9,7 +9,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <style>
-/* Pure app ka text size bada aur readable banane ke liye */
 html{font-size:16px;}
 body{font-size:0.95rem;font-weight:600;}
 button{touch-action:manipulation}
@@ -436,7 +435,10 @@ function syncTokenFromFirebase() {
         let arr = Object.values(orders);
         
         let todayStr = new Date().toDateString();
-        let todayOrders = arr.filter(o => new Date(o.timestamp).toDateString() === todayStr);
+        let todayOrders = arr.filter(o => {
+            if(!o.timestamp) return false;
+            return new Date(Number(o.timestamp)).toDateString() === todayStr;
+        });
         
         if(todayOrders.length > 0) {
             let maxTok = Math.max(...todayOrders.map(o => Number(o.token) || 0));
@@ -528,7 +530,10 @@ try {
     let snapshot = await db.ref('orders').once('value');
     let orders = Object.values(snapshot.val() || {});
     let todayStr = new Date().toDateString();
-    let todayOrders = orders.filter(o => new Date(o.timestamp).toDateString() === todayStr);
+    let todayOrders = orders.filter(o => {
+        if(!o.timestamp) return false;
+        return new Date(Number(o.timestamp)).toDateString() === todayStr;
+    });
     if(todayOrders.length > 0) {
         let maxTok = Math.max(...todayOrders.map(o => Number(o.token) || 0));
         token = maxTok + 1;
@@ -551,7 +556,7 @@ tax:t.tax,
 gstEnabled,
 gstRate:gstEnabled?gstRate:0,
 gstNumber:gstEnabled?gstNumber:'',
-total:t.grand,
+total: t.grand,
 paymentMode:pay,
 note:document.getElementById('note').value||'',
 shopName:shop,
@@ -661,7 +666,7 @@ h.innerHTML=a.map(([k,o])=>
 <div>
 <b class="text-amber-400 text-base">Token #${o.token}</b> <span class="text-white ml-1.5 text-base">${money(o.total)}</span>
 <p class="text-gray-200 mt-1.5 text-xs">${(o.items||[]).map(i=>esc(i.name)+' ×'+i.qty).join(', ')}</p>
-<small class="text-gray-400 mt-1 block text-xs">${new Date(o.timestamp).toLocaleString()} | ${o.paymentMode}</small>
+<small class="text-gray-400 mt-1 block text-xs">${o.timestamp ? new Date(Number(o.timestamp)).toLocaleString() : 'Date N/A'} | ${o.paymentMode}</small>
 </div>
 <button class="bg-blue-600 hover:bg-blue-500 px-3.5 py-2.5 rounded-lg text-white font-black shadow h-fit text-xs" onclick="duplicate('${k}')">Duplicate Print</button>
 </div>`).join('')||'<p class="text-gray-400 text-sm">No saved bills</p>';
@@ -678,23 +683,35 @@ receiptData(o);
 printEl('receipt');
 }
 
-/* DASHBOARD AND REPORTS (DATE WISE TABLE WITH BILL / ORDER COUNT) */
+/* DASHBOARD AND REPORTS WITH PASSWORD-PROTECTED DELETE & WHATSAPP NOTIFICATION */
 async function stats(){
 let container = document.getElementById('reportContainer');
 container.innerHTML = '<p class="text-gray-400 text-sm">Loading reports...</p>';
 
 try{
 let snap = await db.ref('orders').once('value');
-let orders = Object.values(snap.val() || {});
+let rawData = snap.val() || {};
+let ordersObj = rawData;
 
 let dateMap = {};
 let grandTotalSale = 0;
 let grandTotalOrders = 0;
 
-orders.forEach(o => {
-    let d = new Date(o.timestamp);
-    let dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    let amt = Number(o.total || 0);
+Object.entries(ordersObj).forEach(([orderKey, o]) => {
+    let amt = 0;
+    if(typeof o.total === 'number') {
+        amt = o.total;
+    } else if(typeof o.total === 'string') {
+        amt = parseFloat(o.total.replace(/[^\d.]/g, '')) || 0;
+    }
+
+    let dateStr = 'Invalid Date';
+    if(o.timestamp) {
+        let d = new Date(Number(o.timestamp));
+        if(!isNaN(d.getTime())) {
+            dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+    }
     
     if(!dateMap[dateStr]) {
         dateMap[dateStr] = { sale: 0, count: 0 };
@@ -706,35 +723,45 @@ orders.forEach(o => {
     grandTotalOrders += 1;
 });
 
-let sortedDates = Object.keys(dateMap).reverse();
+let sortedDates = Object.keys(dateMap).sort((a, b) => {
+    if(a === 'Invalid Date') return 1;
+    if(b === 'Invalid Date') return -1;
+    return new Date(b) - new Date(a);
+});
 
 let html = `
 <div class="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden text-sm">
-<div class="grid grid-cols-3 bg-gray-800 p-3 font-black text-amber-400 border-b border-gray-700">
+<div class="grid grid-cols-4 bg-gray-800 p-3 font-black text-amber-400 border-b border-gray-700">
 <span>Date</span>
-<span class="text-center">Total Bills</span>
-<span class="text-right">Total Sale</span>
+<span class="text-center">Bills</span>
+<span class="text-right">Sale</span>
+<span class="text-right">Action</span>
 </div>
 `;
 
 if(sortedDates.length === 0) {
-    html += `<div class="p-5 text-center text-gray-400 col-span-3 text-sm">No sale records found.</div>`;
+    html += `<div class="p-5 text-center text-gray-400 col-span-4 text-sm">No sale records found.</div>`;
 } else {
     sortedDates.forEach(dt => {
+        let safeDtName = dt.replace(/'/g, "\\'");
         html += `
-        <div class="grid grid-cols-3 p-3 border-b border-gray-800 text-gray-200 items-center font-bold">
+        <div class="grid grid-cols-4 p-3 border-b border-gray-800 text-gray-200 items-center font-bold">
             <span>${dt}</span>
-            <span class="text-center text-amber-300">${dateMap[dt].count} Bills</span>
+            <span class="text-center text-amber-300">${dateMap[dt].count}</span>
             <span class="text-right text-white">${money(dateMap[dt].sale)}</span>
+            <span class="text-right">
+                <button onclick="deleteDateReport('${safeDtName}')" class="bg-red-600 hover:bg-red-500 text-white px-2.5 py-1 rounded text-xs font-black shadow">Delete</button>
+            </span>
         </div>
         `;
     });
     
     html += `
-    <div class="grid grid-cols-3 p-3.5 bg-gray-800/90 font-black text-base text-emerald-400 border-t border-gray-700 items-center">
+    <div class="grid grid-cols-4 p-3.5 bg-gray-800/90 font-black text-base text-emerald-400 border-t border-gray-700 items-center">
         <span>Grand Total</span>
-        <span class="text-center text-amber-400">${grandTotalOrders} Bills</span>
+        <span class="text-center text-amber-400">${grandTotalOrders}</span>
         <span class="text-right">${money(grandTotalSale)}</span>
+        <span></span>
     </div>
     `;
 }
@@ -750,6 +777,49 @@ document.getElementById('dash').textContent = `Today's Sale: ${money(todayData.s
 }catch(e){
 container.innerHTML = `<p class="text-red-400 text-sm">Firebase Error: ${e.message}</p>`;
 }
+}
+
+async function deleteDateReport(dateStr) {
+    let pass = prompt("तारीख का रिपोर्ट डिलीट करने के लिए पासवर्ड डालें (Eshrar@):");
+    if(pass === null) return;
+    if(pass !== "Eshrar@") {
+        alert("गलत पासवर्ड! डिलीट नहीं हुआ।");
+        return;
+    }
+
+    if(!confirm(`क्या आप वाकई ${dateStr} की सभी सेल रिपोर्ट्स डिलीट करना चाहते हैं?`)) return;
+
+    try {
+        let snap = await db.ref('orders').once('value');
+        let orders = snap.val() || {};
+        let updates = {};
+
+        Object.entries(orders).forEach(([key, o]) => {
+            if(o.timestamp) {
+                let d = new Date(Number(o.timestamp));
+                let dStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                if(dStr === dateStr) {
+                    updates[key] = null;
+                }
+            } else if(dateStr === 'Invalid Date') {
+                updates[key] = null;
+            }
+        });
+
+        await db.ref('orders').update(updates);
+        alert(dateStr + ' का पूरा डेटा डिलीट हो गया!');
+
+        // WhatsApp notification alert for number 8881544782
+        let msgText = `Alert: Mister Shawarma par ${dateStr} ki sale report delete kar di gayi hai.`;
+        let waUrl = `https://wa.me/918881544782?text=${encodeURIComponent(msgText)}`;
+        if(confirm("क्या आप अपने WhatsApp नंबर (8881544782) पर इसका मैसेज भेजना चाहते हैं?")) {
+            window.open(waUrl, '_blank');
+        }
+
+        stats();
+    } catch(err) {
+        alert("डिलिट करने में त्रुटि: " + err.message);
+    }
 }
 
 /* SETTINGS */
