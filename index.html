@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="hi">
 <head>
@@ -10,7 +9,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <style>
-body{font-size:13px;font-weight:500}
+/* Pure app ka text size bada aur readable banane ke liye */
+html{font-size:16px;}
+body{font-size:0.95rem;font-weight:600;}
 button{touch-action:manipulation}
 #receipt,#kot{display:none}
 @media print{
@@ -18,134 +19,224 @@ body *{visibility:hidden!important}
 #receipt.printing,#receipt.printing *,
 #kot.printing,#kot.printing *{visibility:visible!important}
 #receipt.printing,#kot.printing{
-display:block!important;position:absolute;top:0;left:0;
-width:100%;padding:12px;background:white;color:black;
-font:13px monospace;font-weight:bold
+display:block!important;
+position:absolute;top:0;left:0;width:100%;
+padding:12px;background:white;color:black;font:14px monospace;font-weight:bold;
 }}
 </style>
 </head>
-<body class="bg-gray-950 text-white font-medium">
 
-<!-- LOGIN -->
+<body class="bg-gray-950 text-white font-semibold">
+
+<!-- LOGIN SCREEN -->
 <div id="loginScreen" class="fixed inset-0 z-[100] bg-gray-950 flex items-center justify-center p-5">
-<div class="bg-gray-900 w-full max-w-sm p-6 rounded-xl border border-gray-700">
+<div class="bg-gray-900 w-full max-w-sm p-6 rounded-xl border border-gray-700 shadow-2xl">
 <h1 class="text-2xl text-center font-black text-amber-400 mb-2">Mister Shawarma POS</h1>
-<p class="text-center mb-5">Admin Login</p>
-<label>मोबाइल नंबर</label>
-<input id="loginPhone" value="8881544782" readonly class="bg-gray-800 p-3 rounded w-full mb-3">
-<label>पासवर्ड</label>
-<input id="loginPassword" type="password" placeholder="अपना पासवर्ड डालें" class="bg-gray-800 p-3 rounded w-full mb-3">
-<button onclick="loginAdmin()" id="loginButton" class="bg-emerald-600 p-3 rounded w-full">LOGIN</button>
-<p id="loginMessage" class="text-center mt-3 text-red-400"></p>
-</div></div>
+<p class="text-center text-gray-300 font-bold mb-5 text-sm">Admin Login</p>
 
+<label class="block mb-1 font-bold text-gray-200 text-sm">मोबाइल नंबर</label>
+<input id="loginPhone" value="8881544782" readonly
+class="bg-gray-800 p-3 rounded w-full mb-3 text-white font-bold text-sm">
+
+<label class="block mb-1 font-bold text-gray-200 text-sm">पासवर्ड</label>
+<input id="loginPassword" type="password" placeholder="अपना पासवर्ड डालें"
+class="bg-gray-800 p-3 rounded w-full mb-3 text-white font-bold text-sm">
+
+<button onclick="loginAdmin()" id="loginButton"
+class="bg-emerald-600 p-3.5 rounded w-full font-bold text-base shadow">LOGIN</button>
+
+<p id="loginMessage" class="text-center mt-3 text-red-400 font-bold text-sm"></p>
+</div>
+</div>
+
+<!-- MAIN APP -->
 <div id="appShell" class="hidden h-screen flex flex-col overflow-hidden">
-<header class="bg-gray-900 p-3 flex justify-between items-center">
-<div><button onclick="drawer()">☰</button>
-<b class="bg-white text-black px-2 rounded"><span class="text-red-600">R</span>J</b>
-<span id="shopHead">Mister Shawarma</span></div>
-<div class="flex gap-2">
-<button id="gstButton" onclick="toggleGST()" class="bg-red-600 px-2 py-1.5 rounded">GST OFF</button>
-<button onclick="settingsOpen()" class="bg-gray-800 px-2 py-1.5 rounded">⚙️ Settings</button>
-</div></header>
+
+<header class="bg-gray-900 border-b border-gray-800 p-3.5 flex justify-between items-center">
+<div>
+<button onclick="drawer()" class="text-xl font-bold px-1.5">☰</button>
+<b class="bg-white text-black px-2 py-0.5 rounded text-base font-black"><span class="text-red-600">R</span>J</b>
+<span id="shopHead" class="font-bold text-base ml-1">Mister Shawarma</span>
+</div>
+<div class="flex items-center gap-2.5">
+<button id="gstButton" onclick="toggleGST()" class="bg-red-600 px-3 py-2 rounded font-bold text-xs">GST OFF</button>
+<button onclick="settingsOpen()" class="font-bold text-xs bg-gray-800 px-3 py-2 rounded border border-gray-700">⚙️ Settings</button>
+</div>
+</header>
 
 <div id="drawerBox" class="hidden fixed inset-0 z-40 bg-black/70" onclick="this.classList.add('hidden')">
-<div class="bg-gray-900 w-64 h-full p-4 space-y-3" onclick="event.stopPropagation()">
-<button onclick="go('pos')">🛒 New Order</button><br>
-<button onclick="menuOpen()">✏️ Edit Menu</button><br>
-<button onclick="go('dashboard')">📊 Dashboard</button><br>
-<button onclick="go('reports')">📈 Reports</button><br>
-<button onclick="settingsOpen()">⚙️ Settings</button><hr>
-<button onclick="logoutAdmin()" class="text-red-400">🚪 Logout</button>
-</div></div>
+<div class="bg-gray-900 w-64 h-full p-4 space-y-4 font-bold text-base" onclick="event.stopPropagation()">
+<button class="block w-full text-left py-1.5" onclick="go('pos')">🛒 New Order</button>
+<button class="block w-full text-left py-1.5" onclick="menuOpen()">✏️ Edit Menu</button>
+<button class="block w-full text-left py-1.5" onclick="go('dashboard')">📊 Dashboard</button>
+<button class="block w-full text-left py-1.5" onclick="go('reports')">📈 Reports</button>
+<button class="block w-full text-left py-1.5" onclick="settingsOpen()">⚙️ Settings</button>
+<hr class="border-gray-700">
+<button class="block w-full text-left py-1.5 text-red-400 font-black" onclick="logoutAdmin()">🚪 Logout</button>
+</div>
+</div>
 
 <main class="flex-1 min-h-0 flex flex-col">
+
 <div id="pos" class="flex-1 min-h-0 flex flex-col">
-<div class="grid grid-cols-2 bg-gray-900 p-1">
-<button id="newTab" onclick="tab('new')" class="bg-red-600 p-2 rounded">New Order</button>
-<button id="billTab" onclick="tab('billing')" class="p-2">Billing / Saved Bills</button></div>
+<div class="grid grid-cols-2 bg-gray-900 p-1.5 font-bold text-sm">
+<button id="newTab" class="bg-red-600 p-2.5 rounded shadow" onclick="tab('new')">New Order</button>
+<button id="billTab" class="p-2.5 text-gray-300" onclick="tab('billing')">Billing / Saved Bills</button>
+</div>
 
 <div id="newPanel" class="flex-1 min-h-0 grid md:grid-cols-2 gap-2 p-2 overflow-auto">
-<section class="bg-gray-900 rounded p-2.5 flex flex-col min-h-0">
-<input id="search" placeholder="🔍 Search item..." class="bg-gray-800 p-2.5 rounded mb-2" oninput="renderMenu()">
-<div class="flex gap-1.5 flex-wrap mb-2">
-<button onclick="category='all';renderMenu()">All</button>
-<button onclick="category='Shawarmas';renderMenu()">Shawarmas</button>
-<button onclick="category='Salads';renderMenu()">Salads</button>
-<button onclick="category='Open Shawarmas';renderMenu()">Open Shawarmas</button>
+
+<section class="bg-gray-900 rounded p-3 flex flex-col min-h-0">
+<input id="search" placeholder="🔍 Search item..." class="bg-gray-800 p-3 rounded mb-2.5 text-white font-bold text-sm outline-none" oninput="renderMenu()">
+<div class="flex gap-2 flex-wrap mb-2.5 font-bold text-xs">
+<button class="bg-gray-800 border border-gray-700 px-3 py-1.5 rounded text-white text-xs" onclick="category='all';renderMenu()">All</button>
+<button class="bg-gray-800 border border-gray-700 px-3 py-1.5 rounded text-white text-xs" onclick="category='Shawarmas';renderMenu()">Shawarmas</button>
+<button class="bg-gray-800 border border-gray-700 px-3 py-1.5 rounded text-white text-xs" onclick="category='Salads';renderMenu()">Salads</button>
+<button class="bg-gray-800 border border-gray-700 px-3 py-1.5 rounded text-white text-xs" onclick="category='Open Shawarmas';renderMenu()">Open Shawarmas</button>
 </div>
-<div id="menuList" class="overflow-auto space-y-2"></div>
+<div id="menuList" class="overflow-auto space-y-2.5"></div>
 </section>
 
-<section class="bg-gray-900 rounded p-2.5 flex flex-col min-h-0">
-<div class="flex justify-between mb-2">
-<span>Token <b id="token" class="text-amber-400">#1</b></span><span>👥 2 persons</span></div>
-<div id="cart" class="space-y-2 overflow-auto flex-1"></div>
-<input id="note" class="bg-gray-800 p-2.5 rounded my-2" placeholder="Note / Special instruction">
-<div class="space-y-1.5 border-t border-gray-700 pt-2">
-<div class="flex justify-between"><span>Subtotal</span><b id="subtotal">₹0</b></div>
-<div class="flex justify-between items-center"><span>Discount (%)</span>
-<input id="discount" type="number" value="0" class="w-16 bg-gray-800 p-1 text-right" oninput="totals()"></div>
-<div class="flex justify-between"><span id="taxLabel">GST OFF</span><b id="tax">₹0</b></div>
-<div class="flex justify-between bg-gray-800 p-2.5 rounded"><span>Total</span><b id="grand" class="text-amber-400">₹0</b></div>
-</div>
-<div class="grid grid-cols-3 gap-1.5 my-2">
-<button id="cash" onclick="pay='Cash';payStyle()" class="bg-emerald-600 p-2.5 rounded">Cash</button>
-<button id="card" onclick="pay='Card';payStyle()" class="bg-gray-800 p-2.5 rounded">Card</button>
-<button id="due" onclick="pay='Due';payStyle()" class="bg-gray-800 p-2.5 rounded">Due</button></div>
-<div class="grid grid-cols-3 gap-1.5">
-<button id="saveBtn" onclick="saveBill()" class="bg-emerald-600 p-3 rounded">SAVE</button>
-<button onclick="printBill()" class="bg-blue-600 p-3 rounded">PRINT</button>
-<button onclick="printKot()" class="bg-amber-600 p-3 rounded">KOT</button></div>
-<p id="status" class="text-center mt-2"></p>
-</section></div>
-
-<div id="billingPanel" class="hidden p-3 overflow-auto">
-<button onclick="historyLoad()" class="bg-blue-600 p-2.5 rounded mb-3">Refresh Bills</button>
-<div id="history" class="space-y-2"></div></div>
+<section class="bg-gray-900 rounded p-3 flex flex-col min-h-0">
+<div class="flex justify-between mb-2.5 font-bold text-sm">
+<span class="text-gray-300">Token <b id="token" class="text-amber-400 text-base">#1</b></span>
+<span class="text-gray-300">👥 2 persons</span>
 </div>
 
-<div id="dashboard" class="hidden p-4"><h2 class="text-amber-400">Dashboard</h2><p id="dash"></p><button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button></div>
+<div id="cart" class="space-y-2.5 overflow-auto flex-1 font-bold"></div>
+<input id="note" class="bg-gray-800 p-3 rounded my-2.5 text-white font-bold text-sm outline-none" placeholder="Note / Special instruction">
 
-<div id="reports" class="hidden p-3 overflow-auto">
-<h2 class="text-amber-400 mb-2">Sale & Expense Reports</h2>
-<div class="flex gap-2 flex-wrap mb-3">
-<button onclick="dateReport()" class="bg-blue-600 p-2 rounded">📅 Date Report</button>
-<button onclick="totalReport()" class="bg-amber-600 p-2 rounded text-black">TOTAL</button>
-<button onclick="expenseForm()" class="bg-emerald-600 p-2 rounded">➕ Kharcha Add</button>
+<div class="space-y-2 border-t border-gray-700 pt-2.5 font-bold text-sm">
+<div class="flex justify-between text-gray-300"><span>Subtotal</span><b id="subtotal" class="text-white text-base">₹0</b></div>
+<div class="flex justify-between items-center text-gray-300">
+<span>Discount (%)</span>
+<input id="discount" type="number" value="0" min="0" max="100"
+class="w-20 bg-gray-800 p-1.5 text-right text-white font-bold rounded text-sm" oninput="totals()">
 </div>
-<div id="report" class="space-y-2"></div>
-<button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button>
+<div class="flex justify-between text-gray-300">
+<span id="taxLabel">GST OFF</span><b id="tax" class="text-white text-base">₹0</b>
+</div>
+<div class="flex justify-between bg-gray-800 p-3 rounded text-base border border-gray-700">
+<span class="text-gray-200 font-bold">Total</span><b id="grand" class="text-amber-400 text-lg font-black">₹0</b>
+</div>
 </div>
 
-<div id="tables" class="hidden p-4"><h2 class="text-amber-400">Running Tables</h2><button onclick="go('pos')" class="bg-red-600 p-2 rounded mt-3">Back</button></div>
+<div class="grid grid-cols-3 gap-2 my-2.5 font-bold text-xs">
+<button id="cash" onclick="pay='Cash';payStyle()" class="bg-emerald-600 p-3 rounded shadow text-xs">Cash</button>
+<button id="card" onclick="pay='Card';payStyle()" class="bg-gray-800 border border-gray-700 p-3 rounded text-gray-300 font-bold text-xs shadow">Card</button>
+<button id="due" onclick="pay='Due';payStyle()" class="bg-gray-800 border border-gray-700 p-3 rounded text-gray-300 font-bold text-xs shadow">Due</button>
+</div>
+
+<div class="grid grid-cols-3 gap-2 font-bold text-xs">
+<button id="saveBtn" onclick="saveBill()" class="bg-emerald-600 p-3.5 rounded font-black text-sm shadow">SAVE</button>
+<button onclick="printBill()" class="bg-blue-600 p-3.5 rounded font-black text-sm shadow">PRINT</button>
+<button onclick="printKot()" class="bg-amber-600 p-3.5 rounded font-black text-sm shadow">KOT</button>
+</div>
+<p id="status" class="text-center mt-2 min-h-4 font-bold text-xs"></p>
+</section>
+</div>
+
+<div id="billingPanel" class="hidden p-3.5 overflow-auto">
+<button onclick="historyLoad()" class="bg-blue-600 p-3 rounded mb-3.5 font-bold text-sm shadow">Refresh Bills</button>
+<div id="history" class="space-y-2.5 font-bold"></div>
+</div>
+</div>
+
+<div id="dashboard" class="hidden p-4 font-bold">
+<h2 class="text-lg text-amber-400 font-black mb-2">Dashboard</h2>
+<p id="dash" class="text-base text-gray-200"></p>
+<button onclick="go('pos')" class="bg-red-600 p-2.5 rounded mt-3 text-sm font-bold shadow">Back</button>
+</div>
+
+<div id="reports" class="hidden p-4 font-bold overflow-auto">
+<h2 class="text-lg text-amber-400 font-black mb-3.5">📈 Sale Reports (Date wise)</h2>
+<div id="reportContainer" class="space-y-3">
+<p class="text-gray-400 text-sm">Loading reports...</p>
+</div>
+<button onclick="go('pos')" class="bg-red-600 px-5 py-2.5 rounded mt-4 text-sm font-bold shadow block">← Back to Order</button>
+</div>
+
+<div id="tables" class="hidden p-4 font-bold">
+<h2 class="text-lg text-amber-400 font-black mb-2">Running Tables</h2>
+<button onclick="go('pos')" class="bg-red-600 p-2.5 rounded mt-3 text-sm font-bold shadow">Back</button>
+</div>
+
 </main>
 
-<footer class="bg-gray-900 grid grid-cols-4 text-center p-2">
-<button onclick="go('pos')">🛒 Order</button><button onclick="go('tables')">🪑 Tables</button><button onclick="go('reports')">📊 Reports</button><button onclick="settingsOpen()">⚙️ Settings</button>
+<footer class="bg-gray-900 grid grid-cols-4 text-center p-2.5 font-bold text-xs border-t border-gray-800">
+<button onclick="go('pos')" class="text-red-500 text-xs">🛒 Order</button>
+<button onclick="go('tables')" class="text-gray-300 text-xs">🪑 Tables</button>
+<button onclick="go('reports')" class="text-gray-300 text-xs">📊 Reports</button>
+<button onclick="settingsOpen()" class="text-gray-300 text-xs">⚙️ Settings</button>
 </footer>
 
 <div id="settings" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-<div class="bg-gray-900 p-5 rounded-xl w-full max-w-sm max-h-[90vh] overflow-auto space-y-3">
-<h3 class="text-amber-400">⚙️ Restaurant Settings</h3>
-<label>Shop Name</label><input id="shopName" class="bg-gray-800 p-2.5 w-full rounded">
-<label>Mobile Number</label><input id="shopPhone" class="bg-gray-800 p-2.5 w-full rounded">
-<label><input id="gstEnabled" type="checkbox" onchange="settingsTaxPreview()"> GST चालू करें</label>
-<label>GST प्रतिशत (%)</label><input id="gstRate" type="number" class="bg-gray-800 p-2.5 w-full rounded">
-<label>GST नंबर (GSTIN)</label><input id="gstNumber" class="bg-gray-800 p-2.5 w-full rounded">
-<div class="flex justify-end gap-2"><button onclick="settingsClose()" class="bg-gray-700 px-4 py-2 rounded">Cancel</button><button onclick="settingsSave()" class="bg-emerald-600 px-4 py-2 rounded">Save Settings</button></div>
-</div></div>
+<div class="bg-gray-900 p-6 rounded-xl w-full max-w-sm max-h-[90vh] overflow-auto font-bold text-sm border border-gray-700 shadow-2xl space-y-3.5">
+<h3 class="text-amber-400 font-black text-lg mb-1">⚙️ Restaurant Settings</h3>
+<label class="block mb-1 text-gray-300 text-xs">Shop Name</label>
+<input id="shopName" class="bg-gray-800 p-3 w-full rounded text-white font-bold outline-none border border-gray-700 text-sm">
+
+<label class="block mb-1 text-gray-300 text-xs">Mobile Number</label>
+<input id="shopPhone" class="bg-gray-800 p-3 w-full rounded text-white font-bold outline-none border border-gray-700 text-sm" placeholder="दुकान का फोन नंबर">
+
+<label class="flex items-center gap-2.5 mb-2 text-gray-200 pt-1 text-xs">
+<input id="gstEnabled" type="checkbox" onchange="settingsTaxPreview()" class="w-4 h-4">
+GST चालू करें
+</label>
+
+<label class="block mb-1 text-gray-300 text-xs">GST प्रतिशत (%)</label>
+<input id="gstRate" type="number" min="0" max="100" value="5"
+class="bg-gray-800 p-3 w-full rounded text-white font-bold outline-none border border-gray-700 text-sm">
+
+<label class="block mb-1 text-gray-300 text-xs">GST नंबर (GSTIN)</label>
+<input id="gstNumber" class="bg-gray-800 p-3 w-full rounded text-white font-bold outline-none border border-gray-700 uppercase text-sm" placeholder="GST नंबर">
+
+<div class="flex justify-end gap-2.5 pt-2 border-t border-gray-800">
+<button onclick="settingsClose()" class="bg-gray-700 px-4 py-2.5 rounded text-white font-bold text-xs">Cancel</button>
+<button onclick="settingsSave()" class="bg-emerald-600 px-4 py-2.5 rounded text-white font-bold text-xs shadow">Save Settings</button>
+</div>
+</div>
+</div>
 
 <div id="menuModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3">
-<div class="bg-gray-900 p-4 rounded-xl w-full max-w-md max-h-[90vh] flex flex-col">
-<h3 class="text-amber-400 mb-2">Edit Menu</h3>
-<div class="flex gap-1.5 mb-2"><input id="newName" placeholder="Item name" class="bg-gray-800 p-2.5 rounded flex-1"><input id="newPrice" type="number" placeholder="₹" class="bg-gray-800 p-2.5 rounded w-20"></div>
-<div class="flex gap-1.5 mb-3"><select id="newTag" class="bg-gray-800 p-2.5 rounded flex-1"><option>Shawarmas</option><option>Salads</option><option>Open Shawarmas</option></select><button onclick="menuAdd()" class="bg-emerald-600 p-2.5 rounded">Add</button></div>
-<div id="editMenu" class="overflow-auto flex-1 space-y-2"></div><button onclick="menuClose()" class="bg-red-600 p-2.5 rounded mt-2">Close</button>
-</div></div>
+<div class="bg-gray-900 p-5 rounded-xl w-full max-w-md max-h-[90vh] flex flex-col font-bold text-sm border border-gray-700 shadow-2xl">
+<h3 class="text-amber-400 font-black text-base mb-2.5">Edit Menu</h3>
+<div class="flex gap-2 mb-2.5">
+<input id="newName" placeholder="Item name" class="bg-gray-800 p-3 rounded flex-1 text-white font-bold outline-none border border-gray-700 text-sm">
+<input id="newPrice" type="number" placeholder="₹" class="bg-gray-800 p-3 rounded w-24 text-white font-bold outline-none border border-gray-700 text-sm">
+</div>
+<div class="flex gap-2 mb-3.5">
+<select id="newTag" class="bg-gray-800 p-3 rounded flex-1 text-white font-bold outline-none border border-gray-700 text-sm">
+<option value="Shawarmas">Shawarmas</option>
+<option value="Salads">Salads</option>
+<option value="Open Shawarmas">Open Shawarmas</option>
+</select>
+<button onclick="menuAdd()" class="bg-emerald-600 p-3 rounded px-6 text-white font-black text-xs shadow">Add</button>
+</div>
+<div id="editMenu" class="overflow-auto flex-1 space-y-2.5 my-1"></div>
+<button onclick="menuClose()" class="bg-red-600 p-3 rounded text-white font-black text-xs mt-2 shadow">Close</button>
+</div>
+</div>
 
-<div id="receipt"><h2 id="rShop" style="text-align:center"></h2><p id="rGst" style="text-align:center"></p><p id="rPhone" style="text-align:center"></p><p style="text-align:center">CUSTOMER BILL</p><p>Token: <span id="rToken"></span></p><hr><div id="rItems"></div><hr><div id="rTotals"></div><p style="text-align:center;margin-top:12px">Thank You! Visit Again.</p></div>
-<div id="kot"><h2 style="text-align:center">KITCHEN ORDER TICKET</h2><p>Token <span id="kToken"></span> | <span id="kTime"></span></p><hr><div id="kItems"></div><p id="kNote"></p></div>
+<div id="receipt">
+<h2 id="rShop" style="text-align:center;font-weight:bold;font-size:16px"></h2>
+<p id="rGst" style="text-align:center;font-size:11px;font-weight:bold"></p>
+<p id="rPhone" style="text-align:center;font-size:11px;font-weight:bold;margin-bottom:4px"></p>
+<p style="text-align:center;font-weight:bold">CUSTOMER BILL</p>
+<p>Token: <span id="rToken"></span></p><hr>
+<div id="rItems"></div><hr>
+<div id="rTotals"></div>
+<p style="text-align:center;margin-top:12px;font-weight:bold">Thank You! Visit Again.</p>
+</div>
+
+<div id="kot">
+<h2 style="text-align:center;font-weight:bold">KITCHEN ORDER TICKET</h2>
+<p>Token <span id="kToken"></span> | <span id="kTime"></span></p><hr>
+<div id="kItems"></div>
+<p id="kNote" style="font-weight:bold"></p>
+</div>
+
+</div><!-- END MAIN APP -->
 
 <script>
 const firebaseConfig={
@@ -154,79 +245,608 @@ databaseURL:"https://rj-billing-app-default-rtdb.firebaseio.com/",
 projectId:"rj-billing-app",
 storageBucket:"rj-billing-app.firebasestorage.app"
 };
-let db=null,auth=null;
-try{if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();auth=firebase.auth()}catch(e){console.error(e)}
-const ADMIN_PHONE="8881544782",ADMIN_EMAIL=ADMIN_PHONE+"@rjpos.app";
-async function loginAdmin(){
-let phone=loginPhone.value.trim(),password=loginPassword.value;
-if(phone!==ADMIN_PHONE)return loginMessage.textContent="गलत मोबाइल नंबर";
-if(!password)return loginMessage.textContent="पासवर्ड डालें";
-loginButton.disabled=true;loginButton.textContent="LOGIN हो रहा है...";
-try{await auth.signInWithEmailAndPassword(ADMIN_EMAIL,password);loginMessage.textContent=""}
-catch(e){loginMessage.textContent="Login नहीं हुआ: "+e.message}
-finally{loginButton.disabled=false;loginButton.textContent="LOGIN"}
+
+let db=null;
+let auth=null;
+
+try{
+if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+db=firebase.database();
+auth=firebase.auth();
+}catch(e){
+console.error(e);
 }
-function logoutAdmin(){if(confirm("क्या Logout करना चाहते हैं?"))auth.signOut()}
-auth?.onAuthStateChanged(user=>{
-let ok=!!(user&&user.email?.toLowerCase()===ADMIN_EMAIL.toLowerCase());
-loginScreen.classList.toggle('hidden',ok);appShell.classList.toggle('hidden',!ok);
-if(!ok){loginPassword.value="";if(user)auth.signOut()}
+
+/* LOGIN SETTINGS */
+const ADMIN_PHONE="8881544782";
+const ADMIN_EMAIL=ADMIN_PHONE+"@rjpos.app";
+
+async function loginAdmin(){
+const phone=document.getElementById('loginPhone').value.trim();
+const password=document.getElementById('loginPassword').value;
+const button=document.getElementById('loginButton');
+const message=document.getElementById('loginMessage');
+
+if(phone!==ADMIN_PHONE){
+message.textContent="गलत मोबाइल नंबर";
+return;
+}
+if(!password){
+message.textContent="पासवर्ड डालें";
+return;
+}
+if(!auth){
+message.textContent="Firebase Authentication शुरू नहीं हुआ";
+return;
+}
+
+button.disabled=true;
+button.textContent="LOGIN हो रहा है...";
+message.textContent="";
+
+try{
+await auth.signInWithEmailAndPassword(ADMIN_EMAIL,password);
+message.textContent="";
+}catch(e){
+console.error(e);
+message.textContent="Login नहीं हुआ: "+e.message;
+}finally{
+button.disabled=false;
+button.textContent="LOGIN";
+}
+}
+
+function logoutAdmin(){
+if(confirm("क्या आप Logout करना चाहते हैं?")){
+auth.signOut();
+}
+}
+
+/* LOGIN CHECK */
+if(auth){
+auth.onAuthStateChanged(user=>{
+const allowed=!!(user&&user.email&&user.email.toLowerCase()===ADMIN_EMAIL.toLowerCase());
+
+document.getElementById('loginScreen').classList.toggle('hidden',allowed);
+document.getElementById('appShell').classList.toggle('hidden',!allowed);
+
+if(!allowed){
+document.getElementById('loginPassword').value="";
+if(user)auth.signOut();
+} else {
+    syncTokenFromFirebase();
+}
+});
+}
+
+/* APP DATA */
+let shop = localStorage.getItem('rj_shop_name') || 'Mister Shawarma';
+if(shop === 'RJ Restaurant') {
+    shop = 'Mister Shawarma';
+    localStorage.setItem('rj_shop_name', shop);
+}
+
+let shopPhone=localStorage.getItem('rj_shop_phone')||'';
+let token=1;
+let pay='Cash',cart=[],category='all',ordersCache={};
+
+let gstEnabled=localStorage.getItem('rj_gst_enabled')==='true';
+let gstRate=Number(localStorage.getItem('rj_gst_rate')||5);
+let gstNumber=localStorage.getItem('rj_gst_number')||'';
+
+const defaultItems=[
+['CLASSIC CHICKEN SHAWARMA',60,'Shawarmas'],
+['PIRI PIRI CHICKEN SHAWARMA',70,'Shawarmas'],
+['ACHARI CHICKEN SHAWARMA',70,'Shawarmas'],
+['FIERY CHICKEN SHAWARMA',70,'Shawarmas'],
+['CHILLI MILLI CHICKEN SHAWARMA',70,'Shawarmas'],
+['BBQ CHICKEN SHAWARMA',80,'Shawarmas'],
+['CHICKEN TIKKA SHAWARMA',90,'Shawarmas'],
+['FIRANGI CHICKEN SHAWARMA',90,'Shawarmas'],
+['HUMMUS CHICKEN SHAWARMA',100,'Shawarmas'],
+
+['CLASSIC CHICKEN SALAD',160,'Salads'],
+['FIRANGI CHICKEN SALAD',180,'Salads'],
+['PIRI PIRI CHICKEN SALAD',170,'Salads'],
+['ACHARI CHICKEN SALAD',170,'Salads'],
+['FIERY CHICKEN SALAD',170,'Salads'],
+['CHICKEN TIKKA SALAD',180,'Salads'],
+['BBQ CHICKEN SALAD',170,'Salads'],
+['CHILLI MILLI CHICKEN SALAD',170,'Salads'],
+['HUMMUS CHICKEN SALAD',180,'Salads'],
+
+['CLASSIC CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['PIRI PIRI CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['ACHARI CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['FIERY CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['CHILLI MILLI CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['BBQ CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['CHICKEN TIKKA SHAWARMA',135,'Open Shawarmas'],
+['FIRANGI CHICKEN SHAWARMA',135,'Open Shawarmas'],
+['HUMMUS CHICKEN SHAWARMA',135,'Open Shawarmas']
+];
+
+let menu=JSON.parse(localStorage.getItem('rj_menu_items')||'null')||
+defaultItems.map(x=>({name:x[0],price:x[1],tag:x[2]}));
+
+const money=n=>'₹'+Math.round(Number(n)||0);
+
+function msg(t,err=false){
+let s=document.getElementById('status');
+s.textContent=t;
+s.className='text-center mt-2 font-bold text-sm '+(err?'text-red-400':'text-emerald-400');
+}
+
+function drawer(){
+document.getElementById('drawerBox').classList.toggle('hidden');
+}
+
+function go(v){
+['pos','dashboard','reports','tables'].forEach(x=>
+document.getElementById(x).classList.add('hidden'));
+document.getElementById(v).classList.remove('hidden');
+if(v==='pos') {
+    syncTokenFromFirebase();
+    tab('new');
+}
+if(v==='dashboard'||v==='reports')stats();
+}
+
+function tab(t){
+document.getElementById('newPanel').classList.toggle('hidden',t!=='new');
+document.getElementById('billingPanel').classList.toggle('hidden',t!=='billing');
+document.getElementById('newTab').className=t==='new'?'bg-red-600 p-2.5 rounded shadow font-bold text-sm':'p-2.5 text-gray-300 font-bold text-sm';
+document.getElementById('billTab').className=t==='billing'?'bg-red-600 p-2.5 rounded shadow font-bold text-sm':'p-2.5 text-gray-300 font-bold text-sm';
+if(t==='billing')historyLoad();
+}
+
+function esc(s){
+return String(s).replace(/[&<>"']/g,c=>({
+'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[c]));
+}
+
+function renderMenu(){
+let q=document.getElementById('search').value.toLowerCase();
+let arr=menu.filter(x=>x.name.toLowerCase().includes(q)&&(category==='all'||x.tag===category));
+
+document.getElementById('menuList').innerHTML=arr.map(x=>
+`<div class="flex justify-between items-center bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-sm">
+<div><b class="text-white text-sm">${esc(x.name)}</b><span class="text-xs bg-gray-700 px-2 py-0.5 ml-2 rounded text-gray-200 font-bold">${esc(x.tag)}</span><p class="text-amber-400 font-black text-sm mt-1">${money(x.price)}</p></div>
+<button class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 rounded-lg text-white font-black text-xs shadow" onclick="addItem(${JSON.stringify(x.name).replace(/"/g,'&quot;')},${Number(x.price)})">ADD</button>
+</div>`).join('')||'<p class="text-gray-400 font-bold text-sm p-3">No items found</p>';
+}
+
+function addItem(n,p){
+let x=cart.find(i=>i.name===n);
+x?x.qty++:cart.push({name:n,price:+p,qty:1});
+drawCart();
+}
+
+function qty(i,d){
+cart[i].qty+=d;
+if(cart[i].qty<1)cart.splice(i,1);
+drawCart();
+}
+
+function syncTokenFromFirebase() {
+    if(!db) return;
+    db.ref('orders').once('value').then(snapshot => {
+        let orders = snapshot.val() || {};
+        let arr = Object.values(orders);
+        
+        let todayStr = new Date().toDateString();
+        let todayOrders = arr.filter(o => new Date(o.timestamp).toDateString() === todayStr);
+        
+        if(todayOrders.length > 0) {
+            let maxTok = Math.max(...todayOrders.map(o => Number(o.token) || 0));
+            token = maxTok + 1;
+        } else {
+            token = 1;
+        }
+        let tokenEl = document.getElementById('token');
+        if(tokenEl) tokenEl.textContent = '#' + token;
+    }).catch(err => {
+        console.error("Token sync error:", err);
+    });
+}
+
+function drawCart(){
+syncTokenFromFirebase();
+document.getElementById('cart').innerHTML=cart.length?cart.map((x,i)=>
+`<div class="flex justify-between items-center bg-gray-800 p-2.5 rounded-lg border border-gray-700 text-sm font-bold">
+<span class="truncate flex-1 text-white">${esc(x.name)}</span>
+<button onclick="qty(${i},-1)" class="px-2.5 py-1 bg-gray-700 rounded text-red-300 font-black text-base">−</button>
+<b class="px-2.5 text-white text-base">${x.qty}</b>
+<button onclick="qty(${i},1)" class="px-2.5 py-1 bg-gray-700 rounded text-green-300 font-black text-base">+</button>
+<span class="text-amber-300 ml-2 text-sm">${money(x.price*x.qty)}</span>
+<button onclick="cart.splice(${i},1);drawCart()" class="text-red-400 font-black text-base ml-2.5 px-1.5">🗑️</button>
+</div>`).join(''):
+'<p class="text-center text-gray-400 font-bold py-5 text-sm">No items added yet.</p>';
+
+totals();
+}
+
+function totals(){
+let sub=cart.reduce((s,x)=>s+x.price*x.qty,0);
+let dp=Math.min(100,Math.max(0,+document.getElementById('discount').value||0));
+let disc=sub*dp/100;
+let taxable=sub-disc;
+let tax=gstEnabled?Math.round(taxable*gstRate/100):0;
+let grand=Math.round(taxable+tax);
+
+document.getElementById('subtotal').textContent=money(sub);
+document.getElementById('tax').textContent=money(tax);
+document.getElementById('taxLabel').textContent=gstEnabled?`GST ${gstRate}%`:'GST OFF';
+document.getElementById('grand').textContent=money(grand);
+
+return{sub,dp,disc,tax,grand};
+}
+
+function payStyle(){
+['Cash','Card','Due'].forEach(x=>
+document.getElementById(x.toLowerCase()).className=
+(pay===x?'bg-emerald-600 text-white font-black shadow':'bg-gray-800 border border-gray-700 text-gray-300 font-bold')+' p-3 rounded text-xs shadow-sm');
+}
+
+/* GST BUTTON */
+function updateGSTButton(){
+let b=document.getElementById('gstButton');
+b.textContent=gstEnabled?'GST ON':'GST OFF';
+b.className=(gstEnabled?'bg-emerald-600':'bg-red-600')+' px-3 py-2 rounded font-bold text-xs shadow';
+}
+
+function toggleGST(){
+gstEnabled=!gstEnabled;
+localStorage.setItem('rj_gst_enabled',gstEnabled);
+document.getElementById('gstEnabled').checked=gstEnabled;
+updateGSTButton();
+totals();
+msg(gstEnabled?'GST चालू हो गया':'GST बंद हो गया');
+}
+
+/* SAVE BILL */
+async function saveBill(){
+if(!cart.length){
+msg('ऑर्डर खाली है! पहले item जोड़ें।',true);
+return;
+}
+if(!db){
+msg('Firebase initialize नहीं हुआ।',true);
+return;
+}
+if(!auth||!auth.currentUser){
+msg('पहले Login करें।',true);
+return;
+}
+
+const b=document.getElementById('saveBtn');
+b.disabled=true;
+b.textContent='Saving…';
+
+try {
+    let snapshot = await db.ref('orders').once('value');
+    let orders = Object.values(snapshot.val() || {});
+    let todayStr = new Date().toDateString();
+    let todayOrders = orders.filter(o => new Date(o.timestamp).toDateString() === todayStr);
+    if(todayOrders.length > 0) {
+        let maxTok = Math.max(...todayOrders.map(o => Number(o.token) || 0));
+        token = maxTok + 1;
+    } else {
+        token = 1;
+    }
+} catch(err) {
+    console.error(err);
+}
+
+const t=totals();
+
+const data={
+token,
+items:cart.map(x=>({...x})),
+subtotal:t.sub,
+discountPercent:t.dp,
+discountAmount:Math.round(t.disc),
+tax:t.tax,
+gstEnabled,
+gstRate:gstEnabled?gstRate:0,
+gstNumber:gstEnabled?gstNumber:'',
+total:t.grand,
+paymentMode:pay,
+note:document.getElementById('note').value||'',
+shopName:shop,
+shopPhone:shopPhone,
+timestamp:Date.now()
+};
+
+try{
+const ref=await db.ref('orders').push(data);
+if(!ref.key)throw new Error('Firebase ने बिल ID नहीं दी');
+
+msg('बिल सेव हो गया ✓');
+cart=[];
+document.getElementById('note').value='';
+document.getElementById('discount').value=0;
+syncTokenFromFirebase();
+drawCart();
+
+}catch(e){
+console.error('SAVE ERROR:',e);
+msg('SAVE नहीं हुआ: '+(e.message||e.code||e),true);
+alert('Bill Save Error:\n'+(e.message||e.code||e));
+}finally{
+b.disabled=false;
+b.textContent='SAVE';
+}
+}
+
+function receiptData(order){
+let t=totals();
+let items=order?order.items:cart;
+let sub=order?order.subtotal:t.sub;
+let dp=order?order.discountPercent:t.dp;
+let disc=order?order.discountAmount:Math.round(t.disc);
+let tax=order?order.tax:t.tax;
+let grand=order?order.total:t.grand;
+let enabled=order?!!order.gstEnabled:gstEnabled;
+let rate=order?Number(order.gstRate||0):gstRate;
+let num=order?order.gstNumber:gstNumber;
+let phone=order?order.shopPhone:shopPhone;
+
+document.getElementById('rShop').textContent=order?.shopName||shop;
+document.getElementById('rGst').textContent=num?("GSTIN: "+num):"";
+document.getElementById('rPhone').textContent=phone?("Phone: "+phone):"";
+document.getElementById('rToken').textContent='#'+(order?.token||token);
+
+document.getElementById('rItems').innerHTML=items.map(i=>
+`<div style="display:flex;justify-content:space-between;margin:4px 0;font-weight:bold">
+<span>${esc(i.name)} ×${i.qty}</span>
+<span>${money(i.price*i.qty)}</span>
+</div>`).join('');
+
+document.getElementById('rTotals').innerHTML=
+`<p style="font-weight:bold">Subtotal: ${money(sub)}</p>
+${dp?`<p style="font-weight:bold">Discount (${dp}%): -${money(disc)}</p>`:''}
+${enabled?`<p style="font-weight:bold">GST ${rate}%: ${money(tax)}</p>`:'<p style="font-weight:bold">GST: OFF</p>'}
+<h3 style="font-size:15px;font-weight:bold">Total: ${money(grand)}</h3>
+<p style="font-weight:bold">Payment: ${order?.paymentMode||pay}</p>`;
+}
+
+function printBill(){
+if(!cart.length){
+msg('ऑर्डर खाली है!',true);
+return;
+}
+receiptData();
+printEl('receipt');
+}
+
+function printEl(id){
+let el=document.getElementById(id);
+el.classList.add('printing');
+window.addEventListener('afterprint',()=>el.classList.remove('printing'),{once:true});
+window.print();
+setTimeout(()=>el.classList.remove('printing'),1500);
+}
+
+function printKot(){
+if(!cart.length){
+msg('ऑर्डर खाली है!',true);
+return;
+}
+
+document.getElementById('kToken').textContent='#'+token;
+document.getElementById('kTime').textContent=new Date().toLocaleString();
+
+document.getElementById('kItems').innerHTML=cart.map(x=>
+`<p style="display:flex;justify-content:space-between;font-weight:bold">
+<span>${esc(x.name)}</span><span>Qty ${x.qty}</span></p>`).join('');
+
+document.getElementById('kNote').textContent=document.getElementById('note').value;
+printEl('kot');
+}
+
+/* BILL HISTORY */
+async function historyLoad(){
+let h=document.getElementById('history');
+h.innerHTML='Loading…';
+
+try{
+let snap=await db.ref('orders').once('value');
+ordersCache=snap.val()||{};
+let a=Object.entries(ordersCache).reverse();
+
+h.innerHTML=a.map(([k,o])=>
+`<div class="bg-gray-900 p-3.5 rounded-lg border border-gray-800 flex justify-between gap-3 font-bold text-sm">
+<div>
+<b class="text-amber-400 text-base">Token #${o.token}</b> <span class="text-white ml-1.5 text-base">${money(o.total)}</span>
+<p class="text-gray-200 mt-1.5 text-xs">${(o.items||[]).map(i=>esc(i.name)+' ×'+i.qty).join(', ')}</p>
+<small class="text-gray-400 mt-1 block text-xs">${new Date(o.timestamp).toLocaleString()} | ${o.paymentMode}</small>
+</div>
+<button class="bg-blue-600 hover:bg-blue-500 px-3.5 py-2.5 rounded-lg text-white font-black shadow h-fit text-xs" onclick="duplicate('${k}')">Duplicate Print</button>
+</div>`).join('')||'<p class="text-gray-400 text-sm">No saved bills</p>';
+
+}catch(e){
+h.textContent='Firebase Error: '+e.message;
+}
+}
+
+function duplicate(k){
+let o=ordersCache[k];
+if(!o)return;
+receiptData(o);
+printEl('receipt');
+}
+
+/* DASHBOARD AND REPORTS (DATE WISE TABLE WITH BILL / ORDER COUNT) */
+async function stats(){
+let container = document.getElementById('reportContainer');
+container.innerHTML = '<p class="text-gray-400 text-sm">Loading reports...</p>';
+
+try{
+let snap = await db.ref('orders').once('value');
+let orders = Object.values(snap.val() || {});
+
+let dateMap = {};
+let grandTotalSale = 0;
+let grandTotalOrders = 0;
+
+orders.forEach(o => {
+    let d = new Date(o.timestamp);
+    let dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    let amt = Number(o.total || 0);
+    
+    if(!dateMap[dateStr]) {
+        dateMap[dateStr] = { sale: 0, count: 0 };
+    }
+    dateMap[dateStr].sale += amt;
+    dateMap[dateStr].count += 1;
+    
+    grandTotalSale += amt;
+    grandTotalOrders += 1;
 });
 
-let shop=localStorage.getItem('rj_shop_name')||'Mister Shawarma';
-let shopPhone=localStorage.getItem('rj_shop_phone')||'',pay='Cash',cart=[],category='all',ordersCache={},expensesCache={};
-let gstEnabled=localStorage.getItem('rj_gst_enabled')==='true',gstRate=Number(localStorage.getItem('rj_gst_rate')||5),gstNumber=localStorage.getItem('rj_gst_number')||'';
-const defaultItems=[
-['CLASSIC CHICKEN SHAWARMA',60,'Shawarmas'],['PIRI PIRI CHICKEN SHAWARMA',70,'Shawarmas'],['ACHARI CHICKEN SHAWARMA',70,'Shawarmas'],['FIERY CHICKEN SHAWARMA',70,'Shawarmas'],['CHILLI MILLI CHICKEN SHAWARMA',70,'Shawarmas'],['BBQ CHICKEN SHAWARMA',80,'Shawarmas'],['CHICKEN TIKKA SHAWARMA',90,'Shawarmas'],['FIRANGI CHICKEN SHAWARMA',90,'Shawarmas'],['HUMMUS CHICKEN SHAWARMA',100,'Shawarmas'],
-['CLASSIC CHICKEN SALAD',160,'Salads'],['FIRANGI CHICKEN SALAD',180,'Salads'],['PIRI PIRI CHICKEN SALAD',170,'Salads'],['ACHARI CHICKEN SALAD',170,'Salads'],['FIERY CHICKEN SALAD',170,'Salads'],['CHICKEN TIKKA SALAD',180,'Salads'],['BBQ CHICKEN SALAD',170,'Salads'],['CHILLI MILLI CHICKEN SALAD',170,'Salads'],['HUMMUS CHICKEN SALAD',180,'Salads'],
-['CLASSIC CHICKEN SHAWARMA',135,'Open Shawarmas'],['PIRI PIRI CHICKEN SHAWARMA',135,'Open Shawarmas'],['ACHARI CHICKEN SHAWARMA',135,'Open Shawarmas'],['FIERY CHICKEN SHAWARMA',135,'Open Shawarmas'],['CHILLI MILLI CHICKEN SHAWARMA',135,'Open Shawarmas'],['BBQ CHICKEN SHAWARMA',135,'Open Shawarmas'],['CHICKEN TIKKA SHAWARMA',135,'Open Shawarmas'],['FIRANGI CHICKEN SHAWARMA',135,'Open Shawarmas'],['HUMMUS CHICKEN SHAWARMA',135,'Open Shawarmas']];
-let menu=JSON.parse(localStorage.getItem('rj_menu_items')||'null')||defaultItems.map(x=>({name:x[0],price:x[1],tag:x[2]}));
-const money=n=>'₹'+Math.round(Number(n)||0);
-function msg(t,err=false){status.textContent=t;status.className='text-center mt-2 '+(err?'text-red-400':'text-emerald-400')}
-function drawer(){drawerBox.classList.toggle('hidden')}
-function go(v){['pos','dashboard','reports','tables'].forEach(x=>document.getElementById(x).classList.add('hidden'));document.getElementById(v).classList.remove('hidden');if(v==='pos')tab('new');if(v==='dashboard'||v==='reports')stats()}
-function tab(t){newPanel.classList.toggle('hidden',t!=='new');billingPanel.classList.toggle('hidden',t!=='billing');newTab.className=t==='new'?'bg-red-600 p-2 rounded':'p-2';billTab.className=t==='billing'?'bg-red-600 p-2 rounded':'p-2';if(t==='billing')historyLoad()}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderMenu(){let q=search.value.toLowerCase(),arr=menu.filter(x=>x.name.toLowerCase().includes(q)&&(category==='all'||x.tag===category));menuList.innerHTML=arr.map(x=>`<div class="flex justify-between items-center bg-gray-800 p-2.5 rounded"><div><b>${esc(x.name)}</b><p class="text-amber-400">${money(x.price)}</p></div><button class="bg-emerald-600 px-3 py-2 rounded" onclick="addItem(${JSON.stringify(x.name).replace(/"/g,'&quot;')},${+x.price})">ADD</button></div>`).join('')||'No items found'}
-function addItem(n,p){let x=cart.find(i=>i.name===n);x?x.qty++:cart.push({name:n,price:+p,qty:1});drawCart()}
-function qty(i,d){cart[i].qty+=d;if(cart[i].qty<1)cart.splice(i,1);drawCart()}
-function drawCart(){tokenDisplay();cartBox();totals()}
-function tokenDisplay(){token.textContent='#'+nextToken}
-function cartBox(){cartElement.innerHTML=cart.length?cart.map((x,i)=>`<div class="flex justify-between items-center bg-gray-800 p-2 rounded text-xs"><span class="truncate flex-1">${esc(x.name)}</span><button onclick="qty(${i},-1)" class="px-2">×</button><b class="px-2">${x.qty}</b><button onclick="qty(${i},1)" class="px-2">+</button><span class="text-amber-300 ml-1">${money(x.price*x.qty)}</span><button onclick="cart.splice(${i},1);drawCart()" class="text-red-400 ml-2">🗑️</button></div>`).join(''):'<p class="text-center text-gray-400 py-4">No items added yet.</p>'}
-const cartElement=document.getElementById('cart');
-function totals(){let sub=cart.reduce((s,x)=>s+x.price*x.qty,0),dp=Math.min(100,Math.max(0,+discount.value||0)),disc=sub*dp/100,taxable=sub-disc,tax=gstEnabled?Math.round(taxable*gstRate/100):0,grand=Math.round(taxable+tax);subtotal.textContent=money(sub);taxEl.textContent=money(tax);taxLabel.textContent=gstEnabled?`GST ${gstRate}%`:'GST OFF';grandEl.textContent=money(grand);return{sub,dp,disc,tax,grand}}
-const subtotal=document.getElementById('subtotal'),taxEl=document.getElementById('tax'),grandEl=document.getElementById('grand');
-function payStyle(){['Cash','Card','Due'].forEach(x=>document.getElementById(x.toLowerCase()).className=(pay===x?'bg-emerald-600':'bg-gray-800')+' p-2.5 rounded')}
-function updateGSTButton(){gstButton.textContent=gstEnabled?'GST ON':'GST OFF';gstButton.className=(gstEnabled?'bg-emerald-600':'bg-red-600')+' px-2.5 py-1.5 rounded'}
-function toggleGST(){gstEnabled=!gstEnabled;localStorage.setItem('rj_gst_enabled',gstEnabled);gstEnabledEl.checked=gstEnabled;updateGSTButton();totals();msg(gstEnabled?'GST चालू':'GST बंद')}
-function indiaDate(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
-let activeDate=indiaDate(),nextToken=1,tokenRef=null;
-function listenToken(){if(!db||!auth?.currentUser)return;let key=indiaDate();if(key===activeDate&&tokenRef)return;activeDate=key;if(tokenRef)tokenRef.off();tokenRef=db.ref('dailyTokens/'+key);tokenRef.on('value',s=>{nextToken=(Number(s.val())||0)+1;tokenDisplay()})}
-setInterval(()=>{if(indiaDate()!==activeDate){tokenRef?.off();tokenRef=null;listenToken()}},30000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)listenToken()});
-async function reserveToken(){let key=indiaDate(),r=await db.ref('dailyTokens/'+key).transaction(v=>(Number(v)||0)+1);if(!r.committed)throw Error('Token reserve नहीं हुआ');return{number:r.snapshot.val(),dateKey:key}}
-async function saveBill(){if(!cart.length)return msg('ऑर्डर खाली है!',true);if(!db||!auth?.currentUser)return msg('पहले Login/Firebase जाँचें',true);saveBtn.disabled=true;saveBtn.textContent='Saving…';try{let t=totals(),reserved=await reserveToken(),data={token:reserved.number,dateKey:reserved.dateKey,items:cart.map(x=>({...x})),subtotal:t.sub,discountPercent:t.dp,discountAmount:Math.round(t.disc),tax:t.tax,gstEnabled,gstRate:gstEnabled?gstRate:0,gstNumber:gstEnabled?gstNumber:'',total:t.grand,paymentMode:pay,note:note.value||'',shopName:shop,shopPhone,timestamp:Date.now()};let pushed=await db.ref('orders').push(data);if(!pushed.key)throw Error('Bill ID नहीं मिला');msg('बिल सेव ✓ Token #'+reserved.number);cart=[];note.value='';discount.value=0;drawCart();historyLoad()}catch(e){msg('SAVE नहीं हुआ: '+e.message,true);alert('Save Error: '+e.message)}finally{saveBtn.disabled=false;saveBtn.textContent='SAVE'}}
-function receiptData(order){let t=totals(),items=order?order.items:cart,sub=order?order.subtotal:t.sub,dp=order?order.discountPercent:t.dp,disc=order?order.discountAmount:Math.round(t.disc),tax=order?order.tax:t.tax,grand=order?order.total:t.grand,enabled=order?!!order.gstEnabled:gstEnabled,rate=order?Number(order.gstRate||0):gstRate,num=order?order.gstNumber:gstNumber,phone=order?order.shopPhone:shopPhone;rShop.textContent=order?.shopName||shop;rGst.textContent=num?'GSTIN: '+num:'';rPhone.textContent=phone?'Phone: '+phone:'';rToken.textContent='#'+(order?.token||nextToken);rItems.innerHTML=(items||[]).map(i=>`<div style="display:flex;justify-content:space-between;margin:4px 0"><span>${esc(i.name)} ×${i.qty}</span><span>${money(i.price*i.qty)}</span></div>`).join('');rTotals.innerHTML=`<p>Subtotal: ${money(sub)}</p>${dp?`<p>Discount (${dp}%): -${money(disc)}</p>`:''}${enabled?`<p>GST ${rate}%: ${money(tax)}</p>`:'<p>GST OFF</p>'}<h3>Total: ${money(grand)}</h3><p>Payment: ${order?.paymentMode||pay}</p>`}
-function printBill(){if(!cart.length)return msg('ऑर्डर खाली है!',true);receiptData();printEl('receipt')}
-function printEl(id){let el=document.getElementById(id);el.classList.add('printing');window.addEventListener('afterprint',()=>el.classList.remove('printing'),{once:true});window.print();setTimeout(()=>el.classList.remove('printing'),1500)}
-function printKot(){if(!cart.length)return msg('ऑर्डर खाली है!',true);kToken.textContent='#'+nextToken;kTime.textContent=new Date().toLocaleString('en-IN');kItems.innerHTML=cart.map(x=>`<p style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>Qty ${x.qty}</span></p>`).join('');kNote.textContent=note.value;printEl('kot')}
-function historyLoad(){history.innerHTML='Loading…';db.ref('orders').once('value').then(s=>{ordersCache=s.val()||{};history.innerHTML=Object.entries(ordersCache).reverse().map(([k,o])=>`<div class="bg-gray-900 p-3 rounded border border-gray-800 flex justify-between gap-2 text-xs"><div><b class="text-amber-400">Token #${o.token}</b> ${money(o.total)}<p>${(o.items||[]).map(i=>esc(i.name)+' ×'+i.qty).join(', ')}</p><small>${new Date(o.timestamp).toLocaleString('en-IN')} | ${o.paymentMode}</small></div><button class="bg-blue-600 px-3 py-2 rounded" onclick="duplicate('${k}')">Duplicate Print</button></div>`).join('')||'No saved bills'}).catch(e=>history.textContent='Firebase Error: '+e.message)}
-function duplicate(k){let o=ordersCache[k];if(o){receiptData(o);printEl('receipt')}}
-function dateOf(o){return o.dateKey||new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(o.timestamp||0))}
-async function getData(){let [os,es]=await Promise.all([db.ref('orders').once('value'),db.ref('expenses').once('value')]);ordersCache=os.val()||{};expensesCache=es.val()||{};return{orders:Object.values(ordersCache),expenses:Object.values(expensesCache)}}
-async function stats(){try{let {orders,expenses}=await getData(),today=indiaDate(),sales=orders.filter(o=>dateOf(o)===today).reduce((n,o)=>n+(+o.total||0),0),exp=expenses.filter(e=>e.dateKey===today).reduce((n,e)=>n+(+e.amount||0),0);dash.textContent=`आज Sale: ${money(sales)} | Orders: ${orders.filter(o=>dateOf(o)===today).length} | Kharcha: ${money(exp)} | Net: ${money(sales-exp)}`;report.innerHTML=`<div class="bg-gray-900 p-3 rounded">आज Sale: ${money(sales)}<br>आज Kharcha: ${money(exp)}<br>आज Net: ${money(sales-exp)}<br>Total Sale: ${money(orders.reduce((n,o)=>n+(+o.total||0),0))}<br>Total Kharcha: ${money(expenses.reduce((n,e)=>n+(+e.amount||0),0))}</div>`}catch(e){report.textContent='Firebase: '+e.message}}
-async function dateReport(){let d=prompt('Report तारीख (YYYY-MM-DD)',indiaDate());if(!d)return;try{let {orders,expenses}=await getData(),a=orders.filter(o=>dateOf(o)===d),ex=expenses.filter(e=>e.dateKey===d),sale=a.reduce((n,o)=>n+(+o.total||0),0),kh=ex.reduce((n,e)=>n+(+e.amount||0),0);report.innerHTML=`<div class="bg-gray-900 p-3 rounded"><b>${d} Report</b><br>Bills: ${a.length}<br>Sale: ${money(sale)}<br>Kharcha: ${money(kh)}<br>Net: ${money(sale-kh)}<hr>${ex.map(e=>esc(e.title)+' — '+money(e.amount)).join('<br>')||'खर्च नहीं'}</div>`}catch(e){report.textContent=e.message}}
-async function totalReport(){try{let {orders,expenses}=await getData(),days={};orders.forEach(o=>{let d=dateOf(o);days[d]??={sale:0,bills:0,expense:0};days[d].sale+=+o.total||0;days[d].bills++});expenses.forEach(e=>{let d=e.dateKey;days[d]??={sale:0,bills:0,expense:0};days[d].expense+=+e.amount||0});let sale=orders.reduce((n,o)=>n+(+o.total||0),0),kh=expenses.reduce((n,e)=>n+(+e.amount||0),0);report.innerHTML=`<div class="bg-gray-900 p-3 rounded mb-2"><b>ALL TIME TOTAL</b><br>Total Sale: ${money(sale)}<br>Total Kharcha: ${money(kh)}<br>Net: ${money(sale-kh)}<br>Total Bills: ${orders.length}</div>`+Object.keys(days).sort().reverse().map(d=>`<div class="bg-gray-900 p-3 rounded mb-2"><b>${d}</b><br>Bills: ${days[d].bills}<br>Sale: ${money(days[d].sale)}<br>Kharcha: ${money(days[d].expense)}<br>Net: ${money(days[d].sale-days[d].expense)}</div>`).join('')}catch(e){report.textContent=e.message}}
-function expenseForm(){let d=prompt('खर्च तारीख (YYYY-MM-DD)',indiaDate());if(!d)return;let title=prompt('खर्च का नाम');if(!title)return;let amount=Number(prompt('खर्च रकम ₹'));if(!amount||amount<=0)return alert('सही रकम डालें');db.ref('expenses').push({dateKey:d,title,amount,timestamp:Date.now()}).then(()=>{msg('Kharcha सेव ✓');stats()}).catch(e=>alert('Expense save error: '+e.message))}
-function settingsOpen(){shopName.value=shop;shopPhoneInput.value=shopPhone;gstEnabledEl.checked=gstEnabled;gstRateEl.value=gstRate;gstNumberEl.value=gstNumber;settings.classList.remove('hidden')}
-const gstEnabledEl=document.getElementById('gstEnabled'),gstRateEl=document.getElementById('gstRate'),gstNumberEl=document.getElementById('gstNumber'),shopPhoneInput=document.getElementById('shopPhone');
-function settingsTaxPreview(){gstEnabled=gstEnabledEl.checked;gstRate=Math.max(0,Number(gstRateEl.value)||0);updateGSTButton();totals()}
-function settingsClose(){settings.classList.add('hidden')}
-function settingsSave(){shop=shopName.value.trim()||'Mister Shawarma';shopPhone=shopPhoneInput.value.trim();gstEnabled=gstEnabledEl.checked;gstRate=Math.max(0,Number(gstRateEl.value)||0);gstNumber=gstNumberEl.value.trim().toUpperCase();localStorage.setItem('rj_shop_name',shop);localStorage.setItem('rj_shop_phone',shopPhone);localStorage.setItem('rj_gst_enabled',gstEnabled);localStorage.setItem('rj_gst_rate',gstRate);localStorage.setItem('rj_gst_number',gstNumber);shopHead.textContent=shop;updateGSTButton();settingsClose();totals();msg('Settings सेव ✓')}
-function menuOpen(){menuModal.classList.remove('hidden');editMenuRender()}function menuClose(){menuModal.classList.add('hidden');renderMenu()}
-function menuAdd(){let n=newName.value.trim(),p=+newPrice.value||0,tg=newTag.value;if(!n)return alert('Item name लिखें');menu.push({name:n,price:p,tag:tg});menuSave();newName.value='';newPrice.value='';editMenuRender()}
-function menuSave(){localStorage.setItem('rj_menu_items',JSON.stringify(menu))}
-function editMenuRender(){editMenu.innerHTML=menu.map((x,i)=>`<div class="flex gap-1.5 items-center"><input class="bg-gray-800 p-2 rounded flex-1" value="${esc(x.name)}" onchange="menu[${i}].name=this.value;menuSave()"><input class="bg-gray-800 p-2 rounded w-16" type="number" value="${x.price}" onchange="menu[${i}].price=+this.value;menuSave()"><select class="bg-gray-800 p-2 rounded" onchange="menu[${i}].tag=this.value"><option ${x.tag==='Shawarmas'?'selected':''}>Shawarmas</option><option ${x.tag==='Salads'?'selected':''}>Salads</option><option ${x.tag==='Open Shawarmas'?'selected':''}>Open Shawarmas</option></select><button onclick="menu.splice(${i},1);menuSave();editMenuRender()" class="text-red-400 px-2">✕</button></div>`).join('')}
-shopHead.textContent=shop;updateGSTButton();renderMenu();drawCart();payStyle();auth?.onAuthStateChanged(u=>{if(u)listenToken()});
+let sortedDates = Object.keys(dateMap).reverse();
+
+let html = `
+<div class="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden text-sm">
+<div class="grid grid-cols-3 bg-gray-800 p-3 font-black text-amber-400 border-b border-gray-700">
+<span>Date</span>
+<span class="text-center">Total Bills</span>
+<span class="text-right">Total Sale</span>
+</div>
+`;
+
+if(sortedDates.length === 0) {
+    html += `<div class="p-5 text-center text-gray-400 col-span-3 text-sm">No sale records found.</div>`;
+} else {
+    sortedDates.forEach(dt => {
+        html += `
+        <div class="grid grid-cols-3 p-3 border-b border-gray-800 text-gray-200 items-center font-bold">
+            <span>${dt}</span>
+            <span class="text-center text-amber-300">${dateMap[dt].count} Bills</span>
+            <span class="text-right text-white">${money(dateMap[dt].sale)}</span>
+        </div>
+        `;
+    });
+    
+    html += `
+    <div class="grid grid-cols-3 p-3.5 bg-gray-800/90 font-black text-base text-emerald-400 border-t border-gray-700 items-center">
+        <span>Grand Total</span>
+        <span class="text-center text-amber-400">${grandTotalOrders} Bills</span>
+        <span class="text-right">${money(grandTotalSale)}</span>
+    </div>
+    `;
+}
+
+html += `</div>`;
+container.innerHTML = html;
+
+let todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+let todayData = dateMap[todayStr] || { sale: 0, count: 0 };
+
+document.getElementById('dash').textContent = `Today's Sale: ${money(todayData.sale)} | Today's Bills: ${todayData.count} | Grand Total Lifetime: ${money(grandTotalSale)}`;
+
+}catch(e){
+container.innerHTML = `<p class="text-red-400 text-sm">Firebase Error: ${e.message}</p>`;
+}
+}
+
+/* SETTINGS */
+function settingsOpen(){
+document.getElementById('shopName').value=shop;
+document.getElementById('shopPhone').value=shopPhone;
+document.getElementById('gstEnabled').checked=gstEnabled;
+document.getElementById('gstRate').value=gstRate;
+document.getElementById('gstNumber').value=gstNumber;
+document.getElementById('settings').classList.remove('hidden');
+}
+
+function settingsTaxPreview(){
+gstEnabled=document.getElementById('gstEnabled').checked;
+gstRate=Math.min(100,Math.max(0,Number(document.getElementById('gstRate').value)||0));
+updateGSTButton();
+totals();
+}
+
+function settingsClose(){
+document.getElementById('settings').classList.add('hidden');
+}
+
+function settingsSave(){
+shop=document.getElementById('shopName').value.trim()||'Mister Shawarma';
+shopPhone=document.getElementById('shopPhone').value.trim();
+gstEnabled=document.getElementById('gstEnabled').checked;
+gstRate=Math.min(100,Math.max(0,Number(document.getElementById('gstRate').value)||0));
+gstNumber=document.getElementById('gstNumber').value.trim().toUpperCase();
+
+localStorage.setItem('rj_shop_name',shop);
+localStorage.setItem('rj_shop_phone',shopPhone);
+localStorage.setItem('rj_gst_enabled',gstEnabled);
+localStorage.setItem('rj_gst_rate',gstRate);
+localStorage.setItem('rj_gst_number',gstNumber);
+
+document.getElementById('shopHead').textContent=shop;
+updateGSTButton();
+settingsClose();
+totals();
+msg('Settings सेव हो गई ✓');
+}
+
+/* EDIT MENU */
+function menuOpen(){
+document.getElementById('menuModal').classList.remove('hidden');
+editMenuRender();
+}
+
+function menuClose(){
+document.getElementById('menuModal').classList.add('hidden');
+renderMenu();
+}
+
+function menuAdd(){
+let n=document.getElementById('newName').value.trim();
+let p=+document.getElementById('newPrice').value||0;
+let tg=document.getElementById('newTag').value;
+
+if(!n)return alert('Item name लिखें');
+
+menu.push({name:n,price:p,tag:tg});
+menuSave();
+
+document.getElementById('newName').value='';
+document.getElementById('newPrice').value='';
+editMenuRender();
+}
+
+function menuSave(){
+localStorage.setItem('rj_menu_items',JSON.stringify(menu));
+}
+
+function editMenuRender(){
+document.getElementById('editMenu').innerHTML=menu.map((x,i)=>
+`<div class="flex gap-2 items-center">
+<input class="bg-gray-800 p-2.5 rounded-lg flex-1 text-sm text-white font-bold outline-none border border-gray-700" value="${esc(x.name)}"
+onchange="menu[${i}].name=this.value;menuSave()">
+<input class="bg-gray-800 p-2.5 rounded-lg w-20 text-sm text-white font-bold outline-none border border-gray-700 text-right" type="number" value="${x.price}"
+onchange="menu[${i}].price=+this.value;menuSave()">
+<select class="bg-gray-800 p-2.5 rounded-lg text-xs text-white font-bold outline-none border border-gray-700" onchange="menu[${i}].tag=this.value;menuSave()">
+<option value="Shawarmas" ${x.tag==='Shawarmas'?'selected':''}>Shawarmas</option>
+<option value="Salads" ${x.tag==='Salads'?'selected':''}>Salads</option>
+<option value="Open Shawarmas" ${x.tag==='Open Shawarmas'?'selected':''}>Open Shawarmas</option>
+</select>
+<button onclick="menu.splice(${i},1);menuSave();editMenuRender()" class="text-red-400 px-2 font-black text-base">✕</button>
+</div>`).join('');
+}
+
+/* APP START */
+document.getElementById('shopHead').textContent=shop;
+updateGSTButton();
+renderMenu();
+syncTokenFromFirebase();
+drawCart();
+payStyle();
 </script>
-</body></html>
+
+</body>
+</html>
